@@ -1,0 +1,70 @@
+{
+    "info": {
+        "description": "Felipe Sa 2021 - HLB",
+        "url": "http://siteaqui.com",
+        "version": "1.0",
+        "year": 2021,
+        "contributor": "Felipe Sa",
+        "date_created": "2021/01/01"
+    },
+    "licenses": [
+        {
+            "url": "http://creativecommons.org/licenses/by-nc-sa/2.0/",
+            "id": 1,
+            "name": "Attribution-NonCommercial-ShareAlike License"
+        },
+        {
+            "url": "http://creativecommons.org/licenses/by-nc/2.0/",
+            "id": 2,
+            "name": "Attribution-NonCommercial License"
+        }
+    ],
+    "images": [
+        {
+            "license": 1,
+            "file_name": "corte_28.tif",
+            "coco_url": "empty",
+            "height": 257,
+            "width": 257,
+            "date_captured": "2020-01-01 00:00:00",
+            "flickr_url": "empty",
+            "id": 28
+        }
+    ],
+    "categories": [
+        {
+            "supercategory": "canopy",
+            "id": 1,
+            "name": "hamlin"
+        }
+    ],
+    "annotations": [
+        {
+            "segmentation": [
+                [
+                    256.09,
+                    59.29,
+                    252.66,
+                    55.86,
+                    252.66,
+                    42.86,
+                    256.09,
+                    40.41,
+                    256.09,
+                    59.29
+                ]
+            ],
+            "area": 54.65528560783195,
+            "iscrowd": 0,
+            "image_id": 28,
+            "bbox": [
+                252.66,
+                40.41,
+                3.43,
+                18.88
+            ],
+            "category_id": 1,
+            "id": 2801
+        }
+    ]
+}

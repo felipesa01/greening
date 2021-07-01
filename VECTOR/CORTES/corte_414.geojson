@@ -1,0 +1,7 @@
+{
+"type": "FeatureCollection",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32723" } },
+"features": [
+{ "type": "Feature", "properties": { "id": 1252, "area": 2.0, "talhao": "2" }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 294272.2426, 7516197.596186560578644 ], [ 294272.404026856122073, 7516197.38095074519515 ], [ 294272.404026856122073, 7516197.0318 ], [ 294272.2426, 7516197.0318 ], [ 294272.2426, 7516197.596186560578644 ] ] ] } }
+]
+}
