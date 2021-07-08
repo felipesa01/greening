@@ -1,0 +1,47 @@
+<PAMDataset>
+  <Metadata domain="xml:XMP" format="xml">
+    <?xpacket begin="&#xFEFF;" id="W5M0MpCehiHzreSzNTczkc9d"?>
+    <x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="XMP Core 4.4.0-Exiv2">
+      <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+        <rdf:Description rdf:about="" xmlns:xmpMM="http://ns.adobe.com/xap/1.0/mm/" xmlns:stEvt="http://ns.adobe.com/xap/1.0/sType/ResourceEvent#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:GIMP="http://www.gimp.org/xmp/" xmlns:tiff="http://ns.adobe.com/tiff/1.0/" xmlns:xmp="http://ns.adobe.com/xap/1.0/" xmpMM:DocumentID="gimp:docid:gimp:511982cb-2345-455d-999d-d1b5fd970af3" xmpMM:InstanceID="xmp.iid:8dd7f1e8-e5cb-4550-99d0-fdcff4e7286a" xmpMM:OriginalDocumentID="xmp.did:9acd764e-7b74-44d7-9727-7f28ccca669b" dc:Format="image/tiff" GIMP:API="2.0" GIMP:Platform="Linux" GIMP:TimeStamp="1625754130361023" GIMP:Version="2.10.24" tiff:DateTime="2021:07:08 11:21:57" tiff:ImageLength="256" tiff:ImageWidth="256" tiff:Orientation="1" xmp:CreatorTool="GIMP 2.10">
+          <xmpMM:History>
+            <rdf:Seq>
+              <rdf:li stEvt:action="saved" stEvt:changed="/" stEvt:instanceID="xmp.iid:b565929e-9103-46cf-bcd3-06ff28f76655" stEvt:softwareAgent="Gimp 2.10 (Linux)" stEvt:when="2021-07-08T11:22:10-03:00" />
+            </rdf:Seq>
+          </xmpMM:History>
+        </rdf:Description>
+      </rdf:RDF>
+    </x:xmpmeta>
+    <?xpacket end="w"?>
+  </Metadata>
+  <PAMRasterBand band="1">
+    <Description>red</Description>
+    <Metadata>
+      <MDI key="STATISTICS_MAXIMUM">240</MDI>
+      <MDI key="STATISTICS_MEAN">148.43170166016</MDI>
+      <MDI key="STATISTICS_MINIMUM">33</MDI>
+      <MDI key="STATISTICS_STDDEV">24.582163867429</MDI>
+      <MDI key="STATISTICS_VALID_PERCENT">100</MDI>
+    </Metadata>
+  </PAMRasterBand>
+  <PAMRasterBand band="2">
+    <Description>green</Description>
+    <Metadata>
+      <MDI key="STATISTICS_MAXIMUM">247</MDI>
+      <MDI key="STATISTICS_MEAN">167.57466125488</MDI>
+      <MDI key="STATISTICS_MINIMUM">48</MDI>
+      <MDI key="STATISTICS_STDDEV">20.081752272395</MDI>
+      <MDI key="STATISTICS_VALID_PERCENT">100</MDI>
+    </Metadata>
+  </PAMRasterBand>
+  <PAMRasterBand band="3">
+    <Description>blue</Description>
+    <Metadata>
+      <MDI key="STATISTICS_MAXIMUM">239</MDI>
+      <MDI key="STATISTICS_MEAN">147.88291931152</MDI>
+      <MDI key="STATISTICS_MINIMUM">25</MDI>
+      <MDI key="STATISTICS_STDDEV">24.191290077694</MDI>
+      <MDI key="STATISTICS_VALID_PERCENT">100</MDI>
+    </Metadata>
+  </PAMRasterBand>
+</PAMDataset>
