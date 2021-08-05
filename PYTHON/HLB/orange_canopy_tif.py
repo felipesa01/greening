@@ -24,6 +24,7 @@ from mrcnn.config import Config
 import mrcnn.utils as utils
 from mrcnn import visualize
 import mrcnn.model as modellib
+import gdalbasics as gdb
 
 # Directory to save logs and trained model
 MODEL_DIR = os.path.join(ROOT_DIR, "logs")
@@ -253,6 +254,14 @@ def train(model):
 
 def prediction(model, imgs_dir):      # Trabalhar nisso aqui!!! #######################################################
 
+    shape_path_aux = args.dataset + '/result/'
+    temp_path_prediction = args.dataset + '/result/' + 'TEMP_RESP.tif'
+    shape_prediction_name = 'pred_image'
+    shape_prediction_ext = '.shp'
+    dataset_prediction = OrangeCanopyDataset()
+    dataset_prediction.load_trees(args.dataset, 'prediction', args.pred_images)
+    dataset_prediction.prepare()
+
     # código do ypnb canopyTrainAndInference
     import skimage
     real_test_dir = imgs_dir
@@ -262,13 +271,34 @@ def prediction(model, imgs_dir):      # Trabalhar nisso aqui!!! ################
             image_paths.append(os.path.join(real_test_dir, filename))
 
     for image_path in image_paths:
-        img = skimage.io.imread(image_path)
-        img_arr = np.array(img)
-        results = model.detect([img_arr], verbose=1)
+        array, image_tif = gdb.readimagetif(image_path, 'Integer')
+        results = model.detect([array], verbose=1)[0]
+        masks = result['masks']
+        dim_masks = masks.shape
+        masks_final = np.zeros((dim_masks[0], dim_masks[1]), dtype=np.int32)
+        for cont_mask in range(dim_masks[2]):
+            aux = masks[:, :, cont_mask].copy()
+            for j in range(aux.shape[0]):
+                for i in range(aux.shape[1]):
+                    if aux[j, i] != 0:
+                        masks_final[j, i] = (cont_mask + 1)
+
+        # save the shape
+        origin_x, pixel_width, rot_x, origin_y, rot_y, pixel_height = image_tif.GetGeoTransform()
+        drive = image_tif.GetDriver()
+        projection = image_tif.GetProjection()
+        raster_origin = (origin_y, origin_x)
+        gdb.array2raster(temp_path_prediction, 'Integer', raster_origin, pixel_height, pixel_width, rot_y, rot_x, drive,
+                         projection, masks_final)
+        shape_path = shape_path_aux + shape_prediction_name + str(k) + shape_prediction_ext
+        gdb.raster2polygon(temp_path_prediction, shape_path, 'result')
+        masks_final = None
 
         r = results[0]
         visualize.display_instances(img, r['rois'], r['masks'], r['class_ids'],
                                     val_dataset.class_names, r['scores'], figsize=(5, 5))
+
+
     print('Prediction Done')
 
 
