@@ -10,6 +10,8 @@ import geopandas as gpd
 import pandas as pd
 from tqdm import tqdm
 from time import sleep
+import json
+
 gdal.UseExceptions()
 
 
@@ -27,7 +29,8 @@ class PreProcessing:
             os.mkdir(self.proj_dir)
             os.mkdir(os.path.join(self.proj_dir, 'img_patches'))
 
-        self.orto = gdal.Open(ortomosaico_dir)  # Dataset da imagem
+        self.orto = gdal.Open(ortomosaico_dir) # Dataset da imagem
+        self.pxsize = round(self.orto.GetGeoTransform()[1], 5)  # Tamanho do pixel (m)
         self.grid = None
         if copas_dir is None:
             self.copas = None
@@ -35,13 +38,14 @@ class PreProcessing:
             self.copas = gpd.read_file(copas_dir).set_index('id').sort_index()
 
     def split_img(self, patch_size=256, overlap=0, driver_grid='GeoJSON', save_img=True):
+        self.patch_size = patch_size
         # Acessar EPSG do mosaico
         prj = self.orto.GetProjection()
         srs = osr.SpatialReference(wkt=prj)
         epsg = 'EPSG:' + srs.GetAuthorityCode('projcs')
 
         # Start do ID e do dicionario de poligonos formadores da grade
-        i = 0
+        i = 1
         grid_pol = {'id': [], 'geometry': []}
 
         # Gerar iteradores do corte
@@ -72,11 +76,22 @@ class PreProcessing:
                     ymin = ymax + height * ypixel
                     geom = shapely.geometry.box(xmin, ymin, xmax, ymax)
 
+                    proj = osr.SpatialReference(wkt=ds.GetProjection())
+                    src = 'EPSG:' + proj.GetAttrValue('AUTHORITY', 1)
+
                     # Caso seja declarado o arquivo de copas (para treinamento), cortar apenas os patches que contêm
                     # algum vetor no seu interior (condição do if)
                     if self.copas is not None:
                         # Avaliar se o patch corresponde a uma região da imagem com valores válidos (Não zero)
-                        if len(ds.ReadAsArray().nonzero()[0]) != 0 and self.copas.intersects(geom).any():
+                        # if len(ds.ReadAsArray().nonzero()[0]) != 0 and self.copas.intersects(geom).any():
+                        overlayer = gpd.overlay(self.copas,
+                                                gpd.GeoDataFrame({'geometry': gpd.GeoSeries(geom,
+                                                                                            crs=src)}),
+                                                how='intersection')
+
+                        overlayer = overlayer.loc[overlayer['geometry'].geom_type == 'Polygon']
+
+                        if len(ds.ReadAsArray().nonzero()[0]) != 0 and overlayer.any(axis=None):
                             if save_img:
                                 # Salvar o pacth em disco
                                 gdal.Translate(
@@ -145,135 +160,168 @@ class PreProcessing:
 
         return corte
 
-    def is_geom_valid(self, corte, geom='MultiPolygon'):
-        '''
-        Criar uma grade com patches selecionados
+    # def is_geom_valid(self, corte, geom='MultiPolygon'):
+    #     '''
+    #     Criar uma grade com patches selecionados
+    #
+    #     :param
+    #     :return:
+    #     '''
+    #
+    #     features = []
+    #     for i in corte.index:
+    #         if corte.loc[i, 'geometry'].geom_type == geom:
+    #             features.append(i)
+    #
+    #     if len(features) != 0:
+    #         return features
+    #     else:
+    #         return True
 
-        :param
-        :return:
-        '''
-
-        features = []
-        for i in corte.index:
-            if corte.loc[i, 'geometry'].geom_type == geom:
-                features.append(i)
-
-        if len(features) != 0:
-            return features
-        else:
-            return True
-
-    def check_geom_split(self):
-        list_empty = []
-        dict_invalid = {}
-
-        with tqdm(total=len(self.grid.index)) as pbar:
-            pbar.set_description("Avaliando geometrias")
-            sleep(0.1)
-            for i in self.grid.index:
-                corte = gpd.clip(self.copas, self.grid.loc[[i]])
-
-                if corte.empty:
-                    list_empty.append(i)
-                else:
-                    if type(self.is_geom_valid(corte)) == list:
-                        dict_invalid['{i:05}'.format(i=i)] = self.is_geom_valid(corte)
-                pbar.update(1)
-        return dict_invalid
+    # def check_geom_split(self):
+    #     dict_invalid = {}
+    #
+    #     with tqdm(total=len(self.grid.index)) as pbar:
+    #         pbar.set_description("Avaliando geometrias")
+    #         sleep(0.1)
+    #         for i in self.grid.index:
+    #             # corte = gpd.clip(self.copas, self.grid.loc[[i]])
+    #             corte = gpd.overlay(self.copas, self.grid.loc[[i]], how='intersection') # gpd.clip(self.copas, self.grid.loc[[i]]).explode().reset_index(drop=True, level=[1]).set_index('id')
+    #             corte = corte.loc[corte['geometry'].geom_type == 'Polygon']
+    #
+    #             if not corte.empty and type(self.is_geom_valid(corte)) == list:
+    #                     dict_invalid['{i:05}'.format(i=i)] = self.is_geom_valid(corte)
+    #             pbar.update(1)
+    #     return dict_invalid
 
     def split_vector(self):
 
-        dict_invalid = self.check_geom_split()
+        # dict_invalid = self.check_geom_split()
 
-        if len(dict_invalid) == 0:
-            with tqdm(total=len(self.grid.index)) as pbar:
-                pbar.set_description("Salvando arquivos")
-                sleep(0.1)
-                for i in self.grid.index:
-                    # Avaliar situação em que keep_geom (argumento de gpd.clip()) seja True
-                    corte = gpd.clip(self.copas, self.grid.loc[[i]])
-                    if not corte.empty:
-                        corte = self.coords_to_xy(corte, self.grid.loc[i].name)
-                        dir_out = os.path.join(self.proj_dir, 'vector_split.gpkg')
-                        corte.to_file(dir_out, layer='{i:05}'.format(i=i), driver="GPKG")
-                    pbar.update(1)
-                print('Concluído!')
-        else:
-            print('Você deve editar os vetores dos seguintes patches para que não sejam gerados poligonos multipartes', dict_invalid)
-            return
-
-    def split_vector_2(self):
-
+        # if len(dict_invalid) == 0:
         with tqdm(total=len(self.grid.index)) as pbar:
             pbar.set_description("Salvando arquivos")
             sleep(0.1)
             for i in self.grid.index:
                 # Avaliar situação em que keep_geom (argumento de gpd.clip()) seja True
-                corte = gpd.clip(self.grid.loc[[i]], self.copas, keep_geom_type=True).explode().reset_index()
+                corte = gpd.overlay(self.copas, self.grid.loc[[i]], how='intersection') # gpd.clip(self.copas, self.grid.loc[[i]]).explode().reset_index(drop=True, level=[1]).set_index('id')
+                corte = corte.loc[corte['geometry'].geom_type == 'Polygon']
                 if not corte.empty:
-                    # corte = self.coords_to_xy(corte, self.grid.loc[i].name)
+                    corte = self.coords_to_xy(corte, self.grid.loc[i].name)
                     dir_out = os.path.join(self.proj_dir, 'vector_split.gpkg')
                     corte.to_file(dir_out, layer='{i:05}'.format(i=i), driver="GPKG")
                 pbar.update(1)
             print('Concluído!')
+        # else:
+        #     print('Você deve editar os vetores dos seguintes patches para que não sejam gerados poligonos multipartes', dict_invalid)
+        #     return
 
-    def is_all_same_geom(self, geom='MultiPolygon'):
-        '''
-        Criar uma grade com patches selecionados
+    # def is_all_same_geom(self, geom='MultiPolygon'):
+    #     '''
+    #     Criar uma grade com patches selecionados
+    #
+    #     :param
+    #     :return:
+    #     '''
+    #
+    #     # grid_selected = gpd.read_file(grade_dir).set_index('id')
+    #
+    #     multi = {}
+    #     for z in self.grid.index:
+    #
+    #         corte = gpd.read_file(os.path.join(self.proj_dir, 'vector_split.gpkg'), layer='{z:05}'.format(z=z))
+    #         features = []
+    #         for i in range(corte.shape[0]):
+    #
+    #             if corte.loc[i, 'geometry'].geom_type == geom:
+    #                 features.append(i)
+    #
+    #         if len(features) != 0:
+    #             multi['{z:05}'.format(z=z)] = features
+    #
+    #     if len(multi) == 0:
+    #         return True
+    #     else:
+    #         return False, multi
 
-        :param
-        :return:
-        '''
+    def get_bbox(self, geom):
+        pairs = []
 
-        # grid_selected = gpd.read_file(grade_dir).set_index('id')
+        for i in range(0, len(geom) - 1, 2):
+            pairs.append((geom[i], geom[i + 1]))
 
-        multi = {}
-        for z in self.grid.index:
+        x = []
+        y = []
+        for i in pairs:
+            x.append(i[0])
+            y.append(i[1])
 
-            corte = gpd.read_file(os.path.join(self.proj_dir, 'vector_split.gpkg'), layer='{z:05}'.format(z=z))
-            features = []
-            for i in range(corte.shape[0]):
+        bbox = [min(x), min(y), round(max(x) - min(x), 2), round(max(y) - min(y), 2)]
 
-                if corte.loc[i, 'geometry'].geom_type == geom:
-                    features.append(i)
+        return bbox
 
-            if len(features) != 0:
-                multi['{z:05}'.format(z=z)] = features
+    def make_annotations(self, info=None, licenses=None, categories=None):
 
-        if len(multi) == 0:
-            return True
-        else:
-            return False, multi
+        if info is None:
+            info = {"description": "Felipe Sa 2021 - HLB",
+                    "url": "http://siteaqui.com",
+                    "version": "1.0",
+                    "year": 2021,
+                    "contributor": "Felipe Sa",
+                    "date_created": "2021/01/01"}
+        if licenses is None:
+            licenses = [{"url": "http://creativecommons.org/licenses/by-nc-sa/2.0/",
+                         "id": 1,
+                         "name": "Attribution-NonCommercial-ShareAlike License"},
+                        {"url": "http://creativecommons.org/licenses/by-nc/2.0/",
+                         "id": 2,
+                         "name": "Attribution-NonCommercial License"}]
+        if categories is None:
+            categories = [{"supercategory": "canopy", "id": 1, "name": "hamlin"}]
 
-    # def coords_to_xy_other(self, grid_selected=None):
-    #
-    #     if grid_selected == None:
-    #         grid_selected = self.grid
-    #
-    #     for z in grid_selected.index:
-    #
-    #         img = rasterio.open('../IMGS/CORTES/{prefix}{z:05}.tif'.format(prefix=self.prefixo, z=z))
-    #         corte = gpd.read_file('../VECTOR/CORTES/{prefix}{z:05}.geojson'.format(prefix=self.prefixo, z=z))
-    #
-    #         corte.insert(len(corte.columns) - 1, 'geometry_image', 0)
-    #         corte['geometry_image'] = corte['geometry_image'].astype('string')
-    #
-    #         for i in corte.index:
-    #
-    #             # [FEITO] Preciso avaliar a ocorrencia de multipartes
-    #             # A função .coords e .exterior não se aplicam a multipartes [FEITO]
-    #             coord = list(corte.loc[i, 'geometry'].exterior.coords)
-    #
-    #             segmentation = ''
-    #             # Atenção aqui!! A visualização das annotations indicou que na lista de coors_img, o y precede o x
-    #             for xy in coord:
-    #                 segmentation += str(round(img.index(xy[0], xy[1], float)[1], 2)) + ', ' + str(
-    #                     round(img.index(xy[0], xy[1], float)[0], 2)) + ', '
-    #
-    #             segmentation = segmentation[:-2]
-    #             corte.at[i, 'geometry_image'] = segmentation
-    #
-    #         corte.to_file('../VECTOR/CORTES/EDITADOS/corte_{}.geojson'.format(z), driver="GeoJSON")
+        for split in ['train', 'val']:
+            ids_img = list(self.grid.loc[self.grid['split_samples'] == split].index)
+            images = []
+            annotations = []
+            for i in ids_img:
+                # images
+                images.append({"license": 1,
+                               "file_name": "{:05}.tif".format(i),
+                               "coco_url": "empty",
+                               "height": self.patch_size,
+                               "width": self.patch_size,
+                               "date_captured": "2020-01-01 00:00:00",
+                               "flickr_url": "empty",
+                               "id": i
+                               })
+
+                # Annotations
+                copas = gpd.read_file(os.path.join(self.proj_dir, 'vector_split.gpkg'), layer='{i:05}'.format(i=i))
+
+                for row in copas.index:
+                    geom_px = [float(x) for x in copas.loc[row, 'geometry_image'].split(', ')]
+
+                    annotations.append({"segmentation": [geom_px],
+                                        # [REFATORADO] Atenção aqui!! 0.0025 é para o tamanho do pixel de 5cm (0,05 x 0,05 = 0,0025)
+                                        "area": copas.loc[row, 'geometry'].area / (self.pxsize * self.pxsize),
+                                        "iscrowd": 0,
+                                        "image_id": i,
+                                        "bbox": self.get_bbox(geom_px),
+                                        "category_id": 1,
+                                        "id": int(str(i) + '0' + str(row + 1))  # Não definido ainda
+                                        })
+
+            annotation = {
+                "info": info,
+                "licenses": licenses,
+                "images": images,
+                "categories": categories,
+                "annotations": annotations,  # <-- Not in Captions annotations
+                # "segment_info": []  # <-- Only in Panoptic annotations
+            }
+
+            with open(os.path.join(self.proj_dir, 'coco_annotations_{}.json'.format(split)), 'w') as outfile:
+                json.dump(annotation, outfile)
 
 
 class Processing:
@@ -387,7 +435,7 @@ class Processing:
         dst_field = 0
         gdal.Polygonize(band, mask, layer, dst_field, [], None)
 
-        return 'Shapefile created!!!!'
+        return 'Vector created!!!!'
 
 
     def join_vectors(self, shape_path_aux, limiar=0.1):
@@ -423,10 +471,10 @@ class Processing:
                 pols.at[i, 'union'] = i
 
         pols = pols.dissolve(by='union')
-        pols.to_file(os.path.join(shape_path_aux,'test_union.geojson'), driver='GeoJSON')
+        pols.to_file(os.path.join(shape_path_aux,'final_result.geojson'), driver='GeoJSON')
 
 
-    def join_vectors_2(self, shape_path_aux, limiar=0.1):
+    def join_vectors_2(self, shape_path_aux, centroid_dist=0.875, limiar_ovelap=0.6):
 
         result_paths = []
         for filename in os.listdir(shape_path_aux):
@@ -435,31 +483,79 @@ class Processing:
                 result_paths.append(os.path.join(shape_path_aux, filename))
 
         pols = pd.concat([gpd.read_file(i) for i in result_paths], axis=0).reset_index(drop=True)
-        pols['ID'] = pols.index
+        pols['centroid'] = pols['geometry'].centroid
         pols.insert(1, column='union', value=0)
+        pols.set_index(keys=pd.Index(range(1, pols.shape[0] + 1)), inplace=True)
+
+        with tqdm(total=2 * len(pols.index)) as pbar:
+            pbar.set_description("Simplificando - Macro")
+            sleep(0.1)
+            for _ in [1, 2]:
+                for i in pols.index:
+                    if pols.loc[i, 'union'] == 0:
+                        point = pols.loc[i, 'centroid']
+                        distance = pols['centroid'].distance(point)
+
+                        distance = distance[distance <= centroid_dist]
+
+                        if len(distance) > 1:
+                            pols.at[distance.index, 'union'] = i
+                        else:
+                            pols.at[i, 'union'] = i
+                    pbar.update(1)
+
+        pols.drop('centroid', axis=1, inplace=True)
+        pols = pols.dissolve(by='union', as_index=False)
+        pols.set_index(keys=pd.Index(range(1, pols.shape[0] + 1)), inplace=True)
+
 
         delete_lines = []
-        for i in pols.index:
-            if pols.loc[i, 'union'] == 0:
-                polygon = pols.loc[i, 'geometry']
-                intersec = pols.overlaps(polygon)
-                intersec = intersec[intersec]
-                list_result = list(intersec.index)
+        with tqdm(total=len(pols.index)) as pbar:
+            pbar.set_description("Simplificando - Micro")
+            sleep(0.1)
+            for i in pols.index:
 
-                if len(list_result) != 0:
-                    maior = pols.loc[list_result, 'geometry'].area.idxmax(axis=0)
+                over = gpd.overlay(pols.loc[[i]], pols, how='intersection')
+                #     print(i)
+                over = over.loc[-over['geometry'].is_empty]
+                over = over.loc[over['union_1'] != over['union_2']].explode()
 
-                    for z in list_result:
-                        inter_poly = pols.loc[z, 'geometry'].intersection(pols.loc[maior, 'geometry'])
-                        if inter_poly.geom_type == 'Polygon' and inter_poly.area > limiar:
-                            delete_lines.append(z)
-                            pols.at[z, 'union'] = i
+                if over.loc[over['geometry'].area >= limiar_ovelap * pols.loc[i, 'geometry'].area].any(axis=None):
+                    delete_lines.append(i)
+                pbar.update(1)
 
-            if pols.loc[i, 'union'] == 0:
-                pols.at[i, 'union'] = i
+        pols.drop(labels=delete_lines, axis=0, inplace=True)
+        pols.to_file(os.path.join(shape_path_aux,'final_result.geojson'), driver='GeoJSON')
 
-        pols = pols.dissolve(by='union')
-        pols.to_file(os.path.join(shape_path_aux,'test_union.geojson'), driver='GeoJSON')
+    def result_to_vector(self, img_tif, masks, scores):
+
+        gt = img_tif.GetGeoTransform()
+        proj = osr.SpatialReference(wkt=img_tif.GetProjection())
+        src = 'EPSG:' + proj.GetAttrValue('AUTHORITY', 1)
+        polygons = []
+
+        serie = gpd.GeoSeries(crs=src)
+        gdf_final = gpd.GeoDataFrame({'score': 0.00, 'geometry': serie})
+
+        for i_mask, score in zip(range(masks.shape[2]), scores):
+            x, y = np.where(masks[:,:,i_mask] == True)
+
+            coord_x = (y * gt[1]) + gt[0]
+            coord_y = (x * gt[5]) + gt[3]
+
+            poly_coord = []
+            for x, y in zip(coord_x, coord_y):
+                poly_coord.append((x, y))
+            poly_coord.append(poly_coord[0])
+
+            poly = geometry.Polygon(poly_coord).buffer(0.05, join_style=3)
+
+            gdf_final = gdf_final.append({'geometry': poly, 'detection_score': score}, ignore_index=True)
+
+        gdf_final = gdf_final.explode().reset_index(drop=True)
+        return gdf_final
+
+
 
 if __name__ == '__main__':
     print('teste')

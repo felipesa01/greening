@@ -6,10 +6,13 @@ Created on Wed Jul 21 10:57:00 2021
 
 import os
 import sys
+import shutil
 import json
 import numpy as np
 import skimage.draw
 from PIL import Image, ImageDraw
+from tqdm import tqdm
+from time import sleep
 
 from imgaug import augmenters as iaa
 
@@ -109,18 +112,18 @@ class OrangeCanopyDataset(utils.Dataset):
         See http://cocodataset.org/#home for more information.
     """
 
-    def load_data(self, dataset_dir, subset):
+    def load_data(self, proj_dir, subset):
         """ Load the coco-like dataset from json
         Args:
             annotation_json: The path to the coco annotations json file
             images_dir: The directory holding the images referred to by the json file
         """
 
-        assert subset in ['train', 'val', 'real_test']
-        dataset_dir = os.path.join(dataset_dir, subset)
+        assert subset in ['train', 'val']
+        # dataset_dir = os.path.join(dataset_dir, subset)
 
-        annotation_json = os.path.join(dataset_dir, 'coco_annotations.json')
-        images_dir = os.path.join(dataset_dir, 'images')
+        annotation_json = os.path.join(proj_dir, 'coco_annotations_{}.json'.format(subset))
+        images_dir = os.path.join(proj_dir, 'img_patches')
 
         # Load json from file
         json_file = open(annotation_json)
@@ -261,25 +264,27 @@ def train(model, config, train_type='heads', dataset=None):
 
     return 'Training Finished!!!!'
 
-def prediction(model, dataset, images_group='real_test', verbose=0, first=False, join=False):      # Trabalhar nisso aqui!!! #######################################################
+def prediction(model, dataset, id_list, verbose=0, first=False, join=False):      # Trabalhar nisso aqui!!! #######################################################
 
     try:
         dataset = args.dataset
     except NameError:
         assert type(dataset) == str, "Dataset wasn't declared"
 
-    dataset = os.path.join(dataset, images_group)
+    dataset = os.path.join(dataset, 'img_patches')
 
     images = []
     for filename in os.listdir(dataset):
-        if os.path.splitext(filename)[1].lower() =='.tif':
+        if os.path.splitext(filename)[1] == '.tif' and int(os.path.splitext(filename)[0]) in id_list:
             images.append(filename)
 
     # [FEITO] Ajeitar questão do caminho de saida (results). Erro ao não existir
 
     shape_path_aux = dataset + '/results/'
-    if not os.path.isdir(shape_path_aux):
-        os.mkdir(shape_path_aux)
+    if os.path.isdir(shape_path_aux):
+        shutil.rmtree(shape_path_aux)
+
+    os.mkdir(shape_path_aux)
     temp_path_prediction = dataset + '/results/' + 'TEMP_RESP.tif'
 
     dict_result = {}
@@ -298,6 +303,7 @@ def prediction(model, dataset, images_group='real_test', verbose=0, first=False,
                 for i in range(aux.shape[1]):
                     if aux[j, i] != 0:
                         masks_final[j, i] = (cont_mask + 1)
+
                     # end if
                 # end for
             # end for
@@ -327,6 +333,61 @@ def prediction(model, dataset, images_group='real_test', verbose=0, first=False,
     if join:
         print('Compilando resultado')
         hlb_process.join_vectors(shape_path_aux)
+        print('Concluído!')
+
+    return dict_result
+
+def prediction_2(model, dataset, id_list, verbose=0, first=False, join=False):      # Trabalhar nisso aqui!!! #######################################################
+
+    try:
+        dataset = args.dataset
+    except NameError:
+        assert type(dataset) == str, "Dataset wasn't declared"
+
+    dataset = os.path.join(dataset, 'img_patches')
+
+    images = []
+    for filename in os.listdir(dataset):
+        if os.path.splitext(filename)[1] == '.tif' and int(os.path.splitext(filename)[0]) in id_list:
+            images.append(filename)
+
+    # [FEITO] Ajeitar questão do caminho de saida (results). Erro ao não existir
+
+    shape_path_aux = dataset + '/results/'
+    if os.path.isdir(shape_path_aux):
+        shutil.rmtree(shape_path_aux)
+
+    os.mkdir(shape_path_aux)
+
+
+    dict_result = {}
+    # código do ypnb canopyTrainAndInference
+    hlb_process = hlb_utils.Processing()
+    with tqdm(total=len(images)) as pbar:
+        pbar.set_description("Inferincdo copas")
+        sleep(0.1)
+        for image in images:
+            path = os.path.join(dataset, image)
+            array, image_tif = hlb_process.readimagetif(path, 'Integer')
+            result = model.detect([array[:, :, 0:3]], verbose=verbose)[0]
+            masks = result['masks']
+            scores = result['scores']
+
+            gdf_final = hlb_process.result_to_vector(image_tif, masks, scores)
+            # return gdf_final
+            shape_path = shape_path_aux + image[:-4] + '.geojson'
+            if not gdf_final.empty:
+                gdf_final.to_file(shape_path, driver='GeoJSON')
+
+            dict_result[path] = result
+
+            if first:
+                break
+            pbar.update(1)
+
+    if join:
+        print('Gerando arquivo de saida')
+        hlb_process.join_vectors_2(shape_path_aux)
         print('Concluído!')
 
     return dict_result
