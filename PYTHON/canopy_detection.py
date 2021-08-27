@@ -122,7 +122,7 @@ class OrangeCanopyDataset(utils.Dataset):
         assert subset in ['train', 'val']
         # dataset_dir = os.path.join(dataset_dir, subset)
 
-        annotation_json = os.path.join(proj_dir, 'coco_annotations_{}.json'.format(subset))
+        annotation_json = os.path.join(proj_dir, 'annotations', 'coco_annotations_{}.json'.format(subset))
         images_dir = os.path.join(proj_dir, 'img_patches')
 
         # Load json from file
@@ -210,7 +210,6 @@ class OrangeCanopyDataset(utils.Dataset):
 
         return mask, class_ids
     # end load_mask
-
 # end class OrangeCanopyDataset
 
 def train(model, config, train_type='heads', dataset=None):
@@ -237,34 +236,89 @@ def train(model, config, train_type='heads', dataset=None):
 
     # You can first train the heads
     print('Training Heads...')
-    model.train(train_dataset, val_dataset, learning_rate=config.LEARNING_RATE, epochs=40, augmentation=augmentation, layers='heads')
+    model.train(train_dataset, val_dataset, learning_rate=config.LEARNING_RATE, epochs=12, augmentation=augmentation, layers='heads')
 
     # see parameters.txt to get hints
     if train_type != 'heads':
         print('Training All One..')
-        model.train(train_dataset, val_dataset, learning_rate=config.LEARNING_RATE, epochs=40, augmentation=augmentation, layers='all')
+        model.train(train_dataset, val_dataset, learning_rate=config.LEARNING_RATE, epochs=24, augmentation=augmentation, layers='all')
 
         if train_type == 'all_1':
             return 'Training Finished!'
 
         print('Training All Two...')
-        model.train(train_dataset, val_dataset, learning_rate=config.LEARNING_RATE, epochs=40, augmentation=augmentation, layers='all')
+        model.train(train_dataset, val_dataset, learning_rate=config.LEARNING_RATE/10, epochs=36, augmentation=augmentation, layers='all')
 
         if train_type == 'all_2':
             return 'Training Finished!'
 
         print('Training All Tree...')
-        model.train(train_dataset, val_dataset, learning_rate=config.LEARNING_RATE, epochs=40, augmentation=augmentation, layers='all')
+        model.train(train_dataset, val_dataset, learning_rate=config.LEARNING_RATE/100, epochs=48, augmentation=augmentation, layers='all')
 
         if train_type == 'all_3':
             return 'Training Finished!'
 
         print('Training All Four...')
-        model.train(train_dataset, val_dataset, learning_rate=config.LEARNING_RATE, epochs=40, augmentation=augmentation, layers='all')
+        model.train(train_dataset, val_dataset, learning_rate=config.LEARNING_RATE/1000, epochs=60, augmentation=augmentation, layers='all')
 
     return 'Training Finished!!!!'
 
 def prediction(model, dataset, id_list, verbose=0, first=False, join=False):      # Trabalhar nisso aqui!!! #######################################################
+
+    try:
+        dataset = args.dataset
+    except NameError:
+        assert type(dataset) == str, "Dataset wasn't declared"
+
+    dataset_img_patches = os.path.join(dataset, 'img_patches')
+
+    images = []
+    for filename in os.listdir(dataset_img_patches):
+        if os.path.splitext(filename)[1] == '.tif' and int(os.path.splitext(filename)[0]) in id_list:
+            images.append(filename)
+
+    # [FEITO] Ajeitar questão do caminho de saida (results). Erro ao não existir
+
+    shape_path_aux = os.path.join(dataset, 'results')
+    if os.path.isdir(shape_path_aux):
+        shutil.rmtree(shape_path_aux)
+
+    os.mkdir(shape_path_aux)
+
+    dict_result = {}
+    # código do ypnb canopyTrainAndInference
+    hlb_process = hlb_utils.Processing()
+    with tqdm(total=len(images)) as pbar:
+        pbar.set_description("Inferincdo copas")
+        sleep(0.1)
+        for image in images:
+            path = os.path.join(dataset_img_patches, image)
+            array, image_tif = hlb_process.readimagetif(path, 'Integer')
+            result = model.detect([array[:, :, 0:3]], verbose=verbose)[0]
+            masks = result['masks']
+            scores = result['scores']
+
+            gdf_final = hlb_process.result_to_vector(image_tif, masks, scores)
+            # return gdf_final
+            shape_path = os.path.join(shape_path_aux, image[:-4] + '.geojson')
+            if not gdf_final.empty:
+                gdf_final.to_file(shape_path, driver='GeoJSON')
+
+            dict_result[path] = result
+
+            if first:
+                break
+            pbar.update(1)
+
+    if join:
+        print('Gerando arquivo de saida')
+        pols = hlb_process.join_vectors(shape_path_aux)
+        pols.to_file(os.path.join(os.path.dirname(shape_path_aux), 'canopy_detection_result.geojson'), driver='GeoJSON')
+        print('Concluído!')
+
+    return dict_result
+
+def prediction_old(model, dataset, id_list, verbose=0, first=False, join=False):      # Trabalhar nisso aqui!!! #######################################################
 
     try:
         dataset = args.dataset
@@ -333,61 +387,6 @@ def prediction(model, dataset, id_list, verbose=0, first=False, join=False):    
     if join:
         print('Compilando resultado')
         hlb_process.join_vectors(shape_path_aux)
-        print('Concluído!')
-
-    return dict_result
-
-def prediction_2(model, dataset, id_list, verbose=0, first=False, join=False):      # Trabalhar nisso aqui!!! #######################################################
-
-    try:
-        dataset = args.dataset
-    except NameError:
-        assert type(dataset) == str, "Dataset wasn't declared"
-
-    dataset = os.path.join(dataset, 'img_patches')
-
-    images = []
-    for filename in os.listdir(dataset):
-        if os.path.splitext(filename)[1] == '.tif' and int(os.path.splitext(filename)[0]) in id_list:
-            images.append(filename)
-
-    # [FEITO] Ajeitar questão do caminho de saida (results). Erro ao não existir
-
-    shape_path_aux = dataset + '/results/'
-    if os.path.isdir(shape_path_aux):
-        shutil.rmtree(shape_path_aux)
-
-    os.mkdir(shape_path_aux)
-
-
-    dict_result = {}
-    # código do ypnb canopyTrainAndInference
-    hlb_process = hlb_utils.Processing()
-    with tqdm(total=len(images)) as pbar:
-        pbar.set_description("Inferincdo copas")
-        sleep(0.1)
-        for image in images:
-            path = os.path.join(dataset, image)
-            array, image_tif = hlb_process.readimagetif(path, 'Integer')
-            result = model.detect([array[:, :, 0:3]], verbose=verbose)[0]
-            masks = result['masks']
-            scores = result['scores']
-
-            gdf_final = hlb_process.result_to_vector(image_tif, masks, scores)
-            # return gdf_final
-            shape_path = shape_path_aux + image[:-4] + '.geojson'
-            if not gdf_final.empty:
-                gdf_final.to_file(shape_path, driver='GeoJSON')
-
-            dict_result[path] = result
-
-            if first:
-                break
-            pbar.update(1)
-
-    if join:
-        print('Gerando arquivo de saida')
-        hlb_process.join_vectors_2(shape_path_aux)
         print('Concluído!')
 
     return dict_result

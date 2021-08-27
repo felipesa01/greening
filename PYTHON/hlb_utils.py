@@ -11,7 +11,6 @@ import pandas as pd
 from tqdm import tqdm
 from time import sleep
 import json
-
 gdal.UseExceptions()
 
 
@@ -28,6 +27,7 @@ class PreProcessing:
         if not os.path.isdir(self.proj_dir):
             os.mkdir(self.proj_dir)
             os.mkdir(os.path.join(self.proj_dir, 'img_patches'))
+            os.mkdir(os.path.join(self.proj_dir, 'annotations'))
 
         self.orto = gdal.Open(ortomosaico_dir) # Dataset da imagem
         self.pxsize = round(self.orto.GetGeoTransform()[1], 5)  # Tamanho do pixel (m)
@@ -320,7 +320,7 @@ class PreProcessing:
                 # "segment_info": []  # <-- Only in Panoptic annotations
             }
 
-            with open(os.path.join(self.proj_dir, 'coco_annotations_{}.json'.format(split)), 'w') as outfile:
+            with open(os.path.join(self.proj_dir, 'annotations', 'coco_annotations_{}.json'.format(split)), 'w') as outfile:
                 json.dump(annotation, outfile)
 
 
@@ -437,96 +437,6 @@ class Processing:
 
         return 'Vector created!!!!'
 
-
-    def join_vectors(self, shape_path_aux, limiar=0.1):
-
-        result_paths = []
-        for filename in os.listdir(shape_path_aux):
-            if os.path.splitext(filename)[1].lower() == '.geojson' and \
-                    os.path.splitext(filename)[0].lower() != 'final_result':
-                result_paths.append(os.path.join(shape_path_aux, filename))
-
-        pols = pd.concat([gpd.read_file(i) for i in result_paths], axis=0).reset_index(drop=True)
-        pols['ID'] = pols.index
-        pols.insert(1, column='union', value=0)
-
-        delete_lines = []
-        for i in pols.index:
-            if pols.loc[i, 'union'] == 0:
-                polygon = pols.loc[i, 'geometry']
-                intersec = pols.overlaps(polygon)
-                intersec = intersec[intersec]
-                list_result = list(intersec.index)
-
-                if len(list_result) != 0:
-                    maior = pols.loc[list_result, 'geometry'].area.idxmax(axis=0)
-
-                    for z in list_result:
-                        inter_poly = pols.loc[z, 'geometry'].intersection(pols.loc[maior, 'geometry'])
-                        if inter_poly.geom_type == 'Polygon' and inter_poly.area > limiar:
-                            delete_lines.append(z)
-                            pols.at[z, 'union'] = i
-
-            if pols.loc[i, 'union'] == 0:
-                pols.at[i, 'union'] = i
-
-        pols = pols.dissolve(by='union')
-        pols.to_file(os.path.join(shape_path_aux,'final_result.geojson'), driver='GeoJSON')
-
-
-    def join_vectors_2(self, shape_path_aux, centroid_dist=0.875, limiar_ovelap=0.6):
-
-        result_paths = []
-        for filename in os.listdir(shape_path_aux):
-            if os.path.splitext(filename)[1].lower() == '.geojson' and \
-                    os.path.splitext(filename)[0].lower() != 'final_result':
-                result_paths.append(os.path.join(shape_path_aux, filename))
-
-        pols = pd.concat([gpd.read_file(i) for i in result_paths], axis=0).reset_index(drop=True)
-        pols['centroid'] = pols['geometry'].centroid
-        pols.insert(1, column='union', value=0)
-        pols.set_index(keys=pd.Index(range(1, pols.shape[0] + 1)), inplace=True)
-
-        with tqdm(total=2 * len(pols.index)) as pbar:
-            pbar.set_description("Simplificando - Macro")
-            sleep(0.1)
-            for _ in [1, 2]:
-                for i in pols.index:
-                    if pols.loc[i, 'union'] == 0:
-                        point = pols.loc[i, 'centroid']
-                        distance = pols['centroid'].distance(point)
-
-                        distance = distance[distance <= centroid_dist]
-
-                        if len(distance) > 1:
-                            pols.at[distance.index, 'union'] = i
-                        else:
-                            pols.at[i, 'union'] = i
-                    pbar.update(1)
-
-        pols.drop('centroid', axis=1, inplace=True)
-        pols = pols.dissolve(by='union', as_index=False)
-        pols.set_index(keys=pd.Index(range(1, pols.shape[0] + 1)), inplace=True)
-
-
-        delete_lines = []
-        with tqdm(total=len(pols.index)) as pbar:
-            pbar.set_description("Simplificando - Micro")
-            sleep(0.1)
-            for i in pols.index:
-
-                over = gpd.overlay(pols.loc[[i]], pols, how='intersection')
-                #     print(i)
-                over = over.loc[-over['geometry'].is_empty]
-                over = over.loc[over['union_1'] != over['union_2']].explode()
-
-                if over.loc[over['geometry'].area >= limiar_ovelap * pols.loc[i, 'geometry'].area].any(axis=None):
-                    delete_lines.append(i)
-                pbar.update(1)
-
-        pols.drop(labels=delete_lines, axis=0, inplace=True)
-        pols.to_file(os.path.join(shape_path_aux,'final_result.geojson'), driver='GeoJSON')
-
     def result_to_vector(self, img_tif, masks, scores):
 
         gt = img_tif.GetGeoTransform()
@@ -538,7 +448,7 @@ class Processing:
         gdf_final = gpd.GeoDataFrame({'score': 0.00, 'geometry': serie})
 
         for i_mask, score in zip(range(masks.shape[2]), scores):
-            x, y = np.where(masks[:,:,i_mask] == True)
+            x, y = np.where(masks[:, :, i_mask] == True)
 
             coord_x = (y * gt[1]) + gt[0]
             coord_y = (x * gt[5]) + gt[3]
@@ -555,13 +465,85 @@ class Processing:
         gdf_final = gdf_final.explode().reset_index(drop=True)
         return gdf_final
 
+    def join_vectors(self, shape_path_aux, centroid_dist=1, limiar_ovelap=0.6):
+
+        result_paths = []
+        for filename in os.listdir(shape_path_aux):
+            if os.path.splitext(filename)[1].lower() == '.geojson':
+                result_paths.append(os.path.join(shape_path_aux, filename))
+
+        pols = pd.concat([gpd.read_file(i) for i in result_paths], axis=0).reset_index(drop=True)
+        pols['geometry'] = pols.buffer(-0.1).buffer(0.1).simplify(0.03)
+        pols = pols.explode('geometry').reset_index(drop=True)
+        pols['centroid'] = pols['geometry'].centroid
+        pols.insert(1, column='union', value=0)
+        pols.set_index(keys=pd.Index(range(1, pols.shape[0] + 1)), inplace=True)
+
+        with tqdm(total=len(pols.index)) as pbar:
+            pbar.set_description("Simplificando - Macro")
+            sleep(0.1)
+            for i in pols.index:
+                if pols.loc[i, 'union'] == 0:
+                    point = pols.loc[i, 'centroid']
+                    distance = pols['centroid'].distance(point)
+
+                    distance = distance[distance <= centroid_dist]
+
+                    if len(distance) > 1:
+                        pols.at[distance.index, 'union'] = i
+                    else:
+                        pols.at[i, 'union'] = i
+                pbar.update(1)
+
+        pols.drop('centroid', axis=1, inplace=True)
+        pols = pols.dissolve(by='union', as_index=False)
+        pols.drop(pols.loc[pols['geometry'].is_empty].index, axis=0, inplace=True)
+        pols.set_index(keys=pd.Index(range(1, pols.shape[0] + 1)), inplace=True)
+        pols['id'] = pols.index
+        # pols['centroid'] = pols['geometry'].centroid
+
+        # Gerar intersecoes entre os poligonos encontrados
+        # Uso de busca indexada (R-tree) com a função gpd.overlay()
+        over = gpd.overlay(pols, pols, how='intersection')
+        # Remover poligonos vazios (talvez possa ser dispensado a partir de agora)
+        over = over.loc[-over['geometry'].is_empty]
+        # Remover intersecoes originadas pela sobreposição da feição com ela mesma
+        over = over.loc[over['id_1'] != over['id_2']].explode().reset_index(drop=True)
+
+        delete_lines = []
+        # Barra de progresso #
+        with tqdm(total=len(over['id_1'])) as pbar:
+            pbar.set_description("Simplificando - Micro")
+            sleep(0.1)
+            # Para cada poligono..
+            for i in over['id_1']:
+                # intersecções entre o poligono avaliado e todas as outras feições
+                intersec = over[over['id_1'] == i]
+
+                # Caso qualquer/alguma área de intersecao avaliada seja maior que 60% (limiar_overlap) do proprio poligono avaliado
+                # ou se poligono avaliado é 3,5x menor que aquele com o qual existe intersecao, o poligono será excluido
+                if intersec.loc[intersec['geometry'].area >= limiar_ovelap * pols.loc[i, 'geometry'].area].any(axis=None) or \
+                        (3.5 * pols.loc[i, 'geometry'].area < pols.loc[intersec['id_2'], 'geometry'].area).any():
+                    delete_lines.append(i)
+
+                pbar.update(1)
+
+            # Apagar poligonos
+            delete_lines = (list(set(delete_lines)))
+        # Fim da barra de progresso #
+
+        pols.drop(labels=delete_lines, axis=0, inplace=True)
+        pols = pols.explode().reset_index(drop=True)
+        pols.set_index(keys=pd.Index(range(1, pols.shape[0] + 1)), inplace=True)
+        pols['id'] = pols.index
+        return pols
 
 
 if __name__ == '__main__':
     print('teste')
 
 # def get_iou(a, b, epsilon=1e-5):
-#     """ Given two boxes aandb` defined as a list of four numbers:
+#     """ Given two boxes a and b` defined as a list of four numbers:
 #     [x1,y1,x2,y2]
 #     where:
 #     x1,y1 represent the upper left corner
