@@ -453,14 +453,17 @@ class Processing:
             coord_x = (y * gt[1]) + gt[0]
             coord_y = (x * gt[5]) + gt[3]
 
-            poly_coord = []
-            for x, y in zip(coord_x, coord_y):
-                poly_coord.append((x, y))
+            poly_coord = [[x, y] for x, y in zip(coord_x, coord_y)]
+            # poly_coord = []
+            # for x, y in zip(coord_x, coord_y):
+            #     poly_coord.append((x, y))
             poly_coord.append(poly_coord[0])
 
-            poly = geometry.Polygon(poly_coord).buffer(0.05, join_style=3)
+            # Por causa do bug em 08/09
+            if len(poly_coord) >= 3:
+                poly = geometry.Polygon(poly_coord).buffer(0.05, join_style=3)
 
-            gdf_final = gdf_final.append({'geometry': poly, 'detection_score': score}, ignore_index=True)
+                gdf_final = gdf_final.append({'geometry': poly, 'detection_score': score}, ignore_index=True)
 
         gdf_final = gdf_final.explode().reset_index(drop=True)
         return gdf_final
@@ -495,8 +498,9 @@ class Processing:
                         pols.at[i, 'union'] = i
                 pbar.update(1)
 
-        pols.drop('centroid', axis=1, inplace=True)
+        # pols.drop('centroid', axis=1, inplace=True)
         pols = pols.dissolve(by='union', as_index=False)
+        pols.drop(['union', 'centroid'], axis=1, inplace=True)
         pols.drop(pols.loc[pols['geometry'].is_empty].index, axis=0, inplace=True)
         pols.set_index(keys=pd.Index(range(1, pols.shape[0] + 1)), inplace=True)
         pols['id'] = pols.index
@@ -520,7 +524,7 @@ class Processing:
                 # intersecções entre o poligono avaliado e todas as outras feições
                 intersec = over[over['id_1'] == i]
 
-                # Caso qualquer/alguma área de intersecao avaliada seja maior que 60% (limiar_overlap) do proprio poligono avaliado
+                # Caso alguma área de intersecao avaliada seja maior que 60% (limiar_overlap) do proprio poligono avaliado
                 # ou se poligono avaliado é 3,5x menor que aquele com o qual existe intersecao, o poligono será excluido
                 if intersec.loc[intersec['geometry'].area >= limiar_ovelap * pols.loc[i, 'geometry'].area].any(axis=None) or \
                         (3.5 * pols.loc[i, 'geometry'].area < pols.loc[intersec['id_2'], 'geometry'].area).any():
@@ -528,7 +532,7 @@ class Processing:
 
                 pbar.update(1)
 
-            # Apagar poligonos
+            # Identificar poligonos a serem apagados
             delete_lines = (list(set(delete_lines)))
         # Fim da barra de progresso #
 

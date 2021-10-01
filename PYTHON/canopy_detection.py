@@ -97,7 +97,7 @@ class OrangeCanopyConfig(Config):
     DETECTION_NMS_THRESHOLD = 0.3
     IMAGE_RESIZE_MODE = "square"
     IMAGE_MIN_DIM = 256
-    IMAGE_MAX_DIM = 256
+    IMAGE_MAX_DIM = 512
     LOSS_WEIGHTS = {
         "rpn_class_loss": 1.,
         "rpn_bbox_loss": 1.,
