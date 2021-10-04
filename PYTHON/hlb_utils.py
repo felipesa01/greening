@@ -461,7 +461,7 @@ class Processing:
 
             # Por causa do bug em 08/09
             if len(poly_coord) >= 3:
-                poly = geometry.Polygon(poly_coord).buffer(0.05, join_style=3)
+                poly = geometry.Polygon(poly_coord).buffer(0.15, join_style=3).buffer(-0.15, join_style=3)
 
                 gdf_final = gdf_final.append({'geometry': poly, 'detection_score': score}, ignore_index=True)
 
