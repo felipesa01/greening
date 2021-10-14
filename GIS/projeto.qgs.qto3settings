@@ -1,0 +1,677 @@
+{
+  "CAMERA": "PERSPECTIVE",
+  "LAYERS": [
+    {
+      "geomType": 3,
+      "layerId": "variedades_e0818796_04c4_422a_91a6_b6d1333ab510",
+      "name": "variedades",
+      "properties": {},
+      "visible": false
+    },
+    {
+      "geomType": 3,
+      "layerId": "area_estudo_7fbf82b3_d77d_42db_aec8_fe3593abb7b8",
+      "name": "area_estudo",
+      "properties": {},
+      "visible": false
+    },
+    {
+      "geomType": 3,
+      "layerId": "train_canopy_final_6aca28d8_bae6_48f1_9533_dc7b40a749ab",
+      "name": "train_canopy_final",
+      "properties": {},
+      "visible": false
+    },
+    {
+      "geomType": 3,
+      "layerId": "train_area_4ce97d44_2c5e_4a36_9ebd_23146ede7354",
+      "name": "train_area",
+      "properties": {},
+      "visible": false
+    },
+    {
+      "geomType": 3,
+      "layerId": "buffer_split_imgs_8d7c6ecf_4015_439b_b06f_7038d7e766bf",
+      "name": "buffer_split_imgs",
+      "properties": {},
+      "visible": false
+    },
+    {
+      "geomType": 3,
+      "layerId": "copas_final_2d68f8e2_bb7e_4f72_a34c_d184968e6abe",
+      "name": "canopy_train",
+      "properties": {},
+      "visible": false
+    },
+    {
+      "geomType": 3,
+      "layerId": "copas_area2_acda6c32_a758_44d4_b714_0529313e6c89",
+      "name": "canopy_train",
+      "properties": {},
+      "visible": false
+    },
+    {
+      "geomType": 1,
+      "layerId": "centroids_da07f404_9755_4469_b2ce_e5697a191c81",
+      "name": "centroids",
+      "properties": {
+        "checkBox_Clickable": true,
+        "checkBox_Clip": true,
+        "checkBox_ExportAttrs": false,
+        "checkBox_Visible": true,
+        "comboBox_Label": null,
+        "comboBox_ObjectType": "Sphere",
+        "comboBox_altitudeMode": null,
+        "fieldExpressionWidget_altitude": "0",
+        "labelHeightWidget": {
+          "comboData": 0,
+          "comboText": "Absolute",
+          "editText": "3",
+          "type": 6
+        },
+        "radioButton_Expression": true,
+        "radioButton_IntersectingFeatures": true,
+        "styleWidget0": {
+          "comboData": 1,
+          "comboText": "Feature style",
+          "editText": "",
+          "type": 2
+        },
+        "styleWidget1": {
+          "comboData": 1,
+          "comboText": "Feature style",
+          "editText": "",
+          "type": 5
+        },
+        "styleWidget2": {
+          "comboData": null,
+          "comboText": "Expression",
+          "editText": "0.767",
+          "type": 1
+        },
+        "styleWidget3": {},
+        "styleWidget4": {},
+        "styleWidget5": {}
+      },
+      "visible": false
+    },
+    {
+      "geomType": 3,
+      "layerId": "canopy_detection_result_fcdac0cf_fefd_4433_b9ca_d7bdeec0ff04",
+      "name": "canopy_detection_result",
+      "properties": {},
+      "visible": false
+    },
+    {
+      "geomType": 3,
+      "layerId": "talhoes_5a0a8333_28df_455b_8333_012bb0c7ae23",
+      "name": "talhoes",
+      "properties": {},
+      "visible": false
+    },
+    {
+      "geomType": 3,
+      "layerId": "img_grid_9aa090bf_27e0_46f5_b1e2_be86e7dd5a33",
+      "name": "img_grid",
+      "properties": {},
+      "visible": false
+    },
+    {
+      "geomType": 1,
+      "layerId": "falhas_prediction_26b8e425_3741_409c_9dde_68666500f760",
+      "name": "gap_prediction",
+      "properties": {},
+      "visible": false
+    },
+    {
+      "geomType": 2,
+      "layerId": "line_prediction_e8006910_3334_4411_a2cb_fc4585ab4988",
+      "name": "line_prediction",
+      "properties": {},
+      "visible": false
+    },
+    {
+      "geomType": 1,
+      "layerId": "centroids_4db98347_6b1e_4b19_82c1_b16dea6cac46",
+      "name": "centroids",
+      "properties": {},
+      "visible": false
+    },
+    {
+      "geomType": 3,
+      "layerId": "canopy_detection_result_4e92e4f1_2059_44e6_bc8a_f3823f220c82",
+      "name": "canopy_detection_result",
+      "properties": {},
+      "visible": false
+    },
+    {
+      "geomType": 3,
+      "layerId": "img_grid_8ff8ce7a_8314_461a_961e_28d0e9ddb6a9",
+      "name": "img_grid",
+      "properties": {},
+      "visible": false
+    },
+    {
+      "geomType": 1,
+      "layerId": "falhas_prediction_2db89fc2_e5d1_473e_a419_8c3963b81dea",
+      "name": "gap_prediction",
+      "properties": {},
+      "visible": false
+    },
+    {
+      "geomType": 2,
+      "layerId": "line_prediction_bb6f7b06_bd94_49a9_85ea_ffa5b59c3dd8",
+      "name": "line_prediction",
+      "properties": {},
+      "visible": false
+    },
+    {
+      "geomType": 3,
+      "layerId": "canopy_detection_result_c730459d_2474_4af7_b427_d8f3fb5e5ee3",
+      "name": "canopy_detection_result",
+      "properties": {},
+      "visible": false
+    },
+    {
+      "geomType": 0,
+      "layerId": "out_68b13870_c26c_4322_b9d4_d1892f8ecc39",
+      "name": "Feature Output Image",
+      "properties": {
+        "checkBox_Clickable": true,
+        "checkBox_Clip": false,
+        "checkBox_Frame": false,
+        "checkBox_Shading": true,
+        "checkBox_Sides": true,
+        "checkBox_Surroundings": false,
+        "checkBox_TransparentBackground": false,
+        "checkBox_Visible": true,
+        "checkBox_Wireframe": false,
+        "colorButton_Color": "0x000000",
+        "comboBox_ClipLayer": "variedades_e0818796_04c4_422a_91a6_b6d1333ab510",
+        "comboBox_TextureSize": 1024,
+        "horizontalSlider_DEMSize": 2,
+        "lineEdit_ImageFile": "",
+        "radioButton_MapCanvas": true,
+        "spinBox_Opacity": 100,
+        "spinBox_Roughening": 1,
+        "spinBox_Size": 3,
+        "toolButton_EdgeColor": "0x000000",
+        "toolButton_SideColor": "0xccbbaa",
+        "toolButton_WireframeColor": "0x000000"
+      },
+      "visible": false
+    },
+    {
+      "geomType": 0,
+      "layerId": "CROSC_6fa9df49_ce0a_44be_875c_f7b509f4b107",
+      "name": "Cross-Sectional Curvature",
+      "properties": {
+        "checkBox_Clickable": true,
+        "checkBox_Clip": false,
+        "checkBox_Frame": false,
+        "checkBox_Shading": true,
+        "checkBox_Sides": true,
+        "checkBox_Surroundings": false,
+        "checkBox_TransparentBackground": false,
+        "checkBox_Visible": true,
+        "checkBox_Wireframe": false,
+        "colorButton_Color": "0x000000",
+        "comboBox_ClipLayer": "variedades_e0818796_04c4_422a_91a6_b6d1333ab510",
+        "comboBox_TextureSize": 1024,
+        "horizontalSlider_DEMSize": 2,
+        "lineEdit_ImageFile": "",
+        "radioButton_MapCanvas": true,
+        "spinBox_Opacity": 100,
+        "spinBox_Roughening": 1,
+        "spinBox_Size": 3,
+        "toolButton_EdgeColor": "0x000000",
+        "toolButton_SideColor": "0xccbbaa",
+        "toolButton_WireframeColor": "0x000000"
+      },
+      "visible": true
+    },
+    {
+      "geomType": 0,
+      "layerId": "out_362c4b1b_285b_4fb7_a9ac_ca92a1463d5e",
+      "name": "Feature Output Image",
+      "properties": {
+        "checkBox_Clickable": true,
+        "checkBox_Clip": false,
+        "checkBox_Frame": false,
+        "checkBox_Shading": true,
+        "checkBox_Sides": true,
+        "checkBox_Surroundings": false,
+        "checkBox_TransparentBackground": false,
+        "checkBox_Visible": true,
+        "checkBox_Wireframe": false,
+        "colorButton_Color": "0x000000",
+        "comboBox_ClipLayer": "variedades_e0818796_04c4_422a_91a6_b6d1333ab510",
+        "comboBox_TextureSize": 1024,
+        "horizontalSlider_DEMSize": 2,
+        "lineEdit_ImageFile": "",
+        "radioButton_MapCanvas": true,
+        "spinBox_Opacity": 100,
+        "spinBox_Roughening": 1,
+        "spinBox_Size": 3,
+        "toolButton_EdgeColor": "0x000000",
+        "toolButton_SideColor": "0xccbbaa",
+        "toolButton_WireframeColor": "0x000000"
+      },
+      "visible": false
+    },
+    {
+      "geomType": 0,
+      "layerId": "OUTPUT_304aa010_bcbe_4004_aa1d_028142961bc0",
+      "name": "Clipped (extent)",
+      "properties": {
+        "checkBox_Clickable": true,
+        "checkBox_Clip": false,
+        "checkBox_Frame": false,
+        "checkBox_Shading": true,
+        "checkBox_Sides": true,
+        "checkBox_Surroundings": false,
+        "checkBox_TransparentBackground": false,
+        "checkBox_Visible": true,
+        "checkBox_Wireframe": false,
+        "colorButton_Color": "0x000000",
+        "comboBox_ClipLayer": "variedades_e0818796_04c4_422a_91a6_b6d1333ab510",
+        "comboBox_TextureSize": 1024,
+        "horizontalSlider_DEMSize": 2,
+        "lineEdit_ImageFile": "",
+        "radioButton_MapCanvas": true,
+        "spinBox_Opacity": 100,
+        "spinBox_Roughening": 1,
+        "spinBox_Size": 3,
+        "toolButton_EdgeColor": "0x000000",
+        "toolButton_SideColor": "0xccbbaa",
+        "toolButton_WireframeColor": "0x000000"
+      },
+      "visible": false
+    },
+    {
+      "geomType": 0,
+      "layerId": "rgb_20_12_19_Voo1e2_dsm_864f5bd8_2aad_483b_9d32_754c013ca157",
+      "name": "rgb_20_12_19_Voo1e2_dsm",
+      "properties": {
+        "checkBox_Clickable": true,
+        "checkBox_Clip": false,
+        "checkBox_Frame": false,
+        "checkBox_Shading": true,
+        "checkBox_Sides": true,
+        "checkBox_Surroundings": false,
+        "checkBox_TransparentBackground": false,
+        "checkBox_Visible": true,
+        "checkBox_Wireframe": false,
+        "colorButton_Color": "0x000000",
+        "comboBox_ClipLayer": "variedades_e0818796_04c4_422a_91a6_b6d1333ab510",
+        "comboBox_TextureSize": 1024,
+        "horizontalSlider_DEMSize": 2,
+        "lineEdit_ImageFile": "",
+        "radioButton_MapCanvas": true,
+        "spinBox_Opacity": 100,
+        "spinBox_Roughening": 1,
+        "spinBox_Size": 3,
+        "toolButton_EdgeColor": "0x000000",
+        "toolButton_SideColor": "0xccbbaa",
+        "toolButton_WireframeColor": "0x000000"
+      },
+      "visible": false
+    },
+    {
+      "geomType": 2,
+      "layerId": "lines_prediction1_6de2ca04_a057_4a4c_8bcc_6abce3b95aa5",
+      "name": "lines_prediction1",
+      "properties": {},
+      "visible": false
+    },
+    {
+      "geomType": 2,
+      "layerId": "lines_prediction2_d22ef5e3_c3c6_4966_a1c6_e8a3e0ccba2f",
+      "name": "lines_prediction2",
+      "properties": {},
+      "visible": false
+    },
+    {
+      "geomType": 2,
+      "layerId": "lines_prediction3_9c7cced6_d350_48e6_bbc7_7bb5e3d2425f",
+      "name": "lines_prediction3",
+      "properties": {},
+      "visible": false
+    },
+    {
+      "geomType": 3,
+      "layerId": "img_grid_637800b9_0c0a_48ee_8b02_470290bcb1d8",
+      "name": "img_grid",
+      "properties": {},
+      "visible": false
+    },
+    {
+      "geomType": 1,
+      "layerId": "falhas_prediction_3a08e93d_db58_46dc_8df7_2ec790a17fcf",
+      "name": "gap_prediction",
+      "properties": {},
+      "visible": false
+    },
+    {
+      "geomType": 2,
+      "layerId": "line_prediction_d33eacca_df26_42cf_b353_1bfe85e3164b",
+      "name": "line_prediction",
+      "properties": {},
+      "visible": false
+    },
+    {
+      "geomType": 1,
+      "layerId": "centroids_60fa7ddd_05ba_4b1c_a398_9ae10a799887",
+      "name": "centroids",
+      "properties": {},
+      "visible": false
+    },
+    {
+      "geomType": 3,
+      "layerId": "copas_area2_52ef011d_5c57_4abd_ba92_6c8871d7b19d",
+      "name": "copas_area2",
+      "properties": {},
+      "visible": false
+    },
+    {
+      "geomType": 3,
+      "layerId": "canopy_detection_result_22ed35f4_df9d_48d4_aa37_dd98fe332b89",
+      "name": "canopy_detection_result",
+      "properties": {},
+      "visible": false
+    },
+    {
+      "geomType": 0,
+      "layerId": "rgb_12_05_2019_area_longe_dtm_a1172682_f1fb_4fa1_a913_670e2319c890",
+      "name": "rgb_12_05_2019_area_longe_dtm",
+      "properties": {
+        "checkBox_Clickable": true,
+        "checkBox_Clip": false,
+        "checkBox_Frame": false,
+        "checkBox_Shading": true,
+        "checkBox_Sides": true,
+        "checkBox_Surroundings": false,
+        "checkBox_TransparentBackground": false,
+        "checkBox_Visible": true,
+        "checkBox_Wireframe": false,
+        "colorButton_Color": "0x000000",
+        "comboBox_ClipLayer": "variedades_e0818796_04c4_422a_91a6_b6d1333ab510",
+        "comboBox_TextureSize": 1024,
+        "horizontalSlider_DEMSize": 2,
+        "lineEdit_ImageFile": "",
+        "radioButton_MapCanvas": true,
+        "spinBox_Opacity": 100,
+        "spinBox_Roughening": 1,
+        "spinBox_Size": 3,
+        "toolButton_EdgeColor": "0x000000",
+        "toolButton_SideColor": "0xccbbaa",
+        "toolButton_WireframeColor": "0x000000"
+      },
+      "visible": false
+    },
+    {
+      "geomType": 0,
+      "layerId": "rgb_12_05_2019_area_longe_dsm_354bedd8_8bdb_423f_bff9_d93f87274dcf",
+      "name": "rgb_12_05_2019_area_longe_dsm",
+      "properties": {},
+      "visible": false
+    },
+    {
+      "geomType": 0,
+      "layerId": "out_a31aa3b4_0cfc_47d1_adaf_189e0434137d",
+      "name": "DSM_final",
+      "properties": {
+        "checkBox_Clickable": true,
+        "checkBox_Clip": false,
+        "checkBox_Frame": false,
+        "checkBox_Shading": true,
+        "checkBox_Sides": true,
+        "checkBox_Surroundings": false,
+        "checkBox_TransparentBackground": false,
+        "checkBox_Visible": true,
+        "checkBox_Wireframe": false,
+        "colorButton_Color": "0x000000",
+        "comboBox_ClipLayer": "variedades_e0818796_04c4_422a_91a6_b6d1333ab510",
+        "comboBox_TextureSize": 1024,
+        "horizontalSlider_DEMSize": 2,
+        "lineEdit_ImageFile": "",
+        "radioButton_MapCanvas": true,
+        "spinBox_Opacity": 100,
+        "spinBox_Roughening": 1,
+        "spinBox_Size": 3,
+        "toolButton_EdgeColor": "0x000000",
+        "toolButton_SideColor": "0xccbbaa",
+        "toolButton_WireframeColor": "0x000000"
+      },
+      "visible": false
+    },
+    {
+      "geomType": 0,
+      "layerId": "DSMminusDTM_train_87f7f9dd_6612_4d17_9881_37d7b18d9db0",
+      "name": "DSMminusDTM_train",
+      "properties": {},
+      "visible": false
+    },
+    {
+      "geomType": 0,
+      "layerId": "DTM_train_ae23d4c6_3103_470a_8239_0b43cd7b1e0c",
+      "name": "DTM_train",
+      "properties": {},
+      "visible": false
+    },
+    {
+      "geomType": 0,
+      "layerId": "OUTPUT_67491c7b_a494_4818_8987_2248a41c2d6a",
+      "name": "Converted",
+      "properties": {},
+      "visible": false
+    },
+    {
+      "geomType": 0,
+      "layerId": "CROSC_f2160ef1_860a_451c_be93_2ec07182ead5",
+      "name": "Cross-Sectional Curvature",
+      "properties": {},
+      "visible": false
+    },
+    {
+      "geomType": 0,
+      "layerId": "DSM_train_3ead3c06_437a_4cbb_b153_0ac7354c949d",
+      "name": "DSM_train",
+      "properties": {},
+      "visible": false
+    },
+    {
+      "geomType": 0,
+      "layerId": "Termal_27_09_2021_dsm_6d2d06f6_4d0f_46a8_a186_c1cb2dcf01ee",
+      "name": "Termal_27_09_2021_dsm",
+      "properties": {
+        "checkBox_Clickable": true,
+        "checkBox_Clip": false,
+        "checkBox_Frame": false,
+        "checkBox_Shading": true,
+        "checkBox_Sides": true,
+        "checkBox_Surroundings": false,
+        "checkBox_TransparentBackground": false,
+        "checkBox_Visible": true,
+        "checkBox_Wireframe": false,
+        "colorButton_Color": "0x000000",
+        "comboBox_ClipLayer": "variedades_e0818796_04c4_422a_91a6_b6d1333ab510",
+        "comboBox_TextureSize": 1024,
+        "horizontalSlider_DEMSize": 2,
+        "lineEdit_ImageFile": "",
+        "radioButton_MapCanvas": true,
+        "spinBox_Opacity": 100,
+        "spinBox_Roughening": 1,
+        "spinBox_Size": 3,
+        "toolButton_EdgeColor": "0x000000",
+        "toolButton_SideColor": "0xccbbaa",
+        "toolButton_WireframeColor": "0x000000"
+      },
+      "visible": false
+    },
+    {
+      "geomType": 0,
+      "layerId": "RESULT_cb1d060b_1ae4_44d6_bb31_7537b1b66150",
+      "name": "Convergence Index",
+      "properties": {},
+      "visible": false
+    },
+    {
+      "geomType": 0,
+      "layerId": "out_39a60a16_f5b9_4802_a03b_873186ac82e5",
+      "name": "Output Image",
+      "properties": {},
+      "visible": false
+    },
+    {
+      "geomType": 0,
+      "layerId": "CIVE_8541c1c2_e860_451f_b39b_12214bf41563",
+      "name": "CIVE",
+      "properties": {
+        "checkBox_Clickable": true,
+        "checkBox_Clip": false,
+        "checkBox_Frame": false,
+        "checkBox_Shading": true,
+        "checkBox_Sides": true,
+        "checkBox_Surroundings": false,
+        "checkBox_TransparentBackground": false,
+        "checkBox_Visible": true,
+        "checkBox_Wireframe": false,
+        "colorButton_Color": "0x000000",
+        "comboBox_ClipLayer": "variedades_e0818796_04c4_422a_91a6_b6d1333ab510",
+        "comboBox_TextureSize": 1024,
+        "horizontalSlider_DEMSize": 2,
+        "lineEdit_ImageFile": "",
+        "radioButton_MapCanvas": true,
+        "spinBox_Opacity": 100,
+        "spinBox_Roughening": 1,
+        "spinBox_Size": 3,
+        "toolButton_EdgeColor": "0x000000",
+        "toolButton_SideColor": "0xccbbaa",
+        "toolButton_WireframeColor": "0x000000"
+      },
+      "visible": false
+    },
+    {
+      "geomType": 0,
+      "layerId": "OUTPUT_be2bc86a_9383_4565_83bf_47022250415b",
+      "name": "final_4band",
+      "properties": {},
+      "visible": false
+    },
+    {
+      "geomType": 0,
+      "layerId": "OUTPUT_16b4aad2_1706_49cc_aba5_1d549c910dfb",
+      "name": "Filled",
+      "properties": {},
+      "visible": false
+    },
+    {
+      "geomType": 0,
+      "layerId": "OUTPUT_66eb74f3_dc87_4e0d_9cc5_c4c685ddc67f",
+      "name": "B",
+      "properties": {},
+      "visible": false
+    },
+    {
+      "geomType": 0,
+      "layerId": "OUTPUT_080c497e_2aed_43b7_85f0_09289d057e85",
+      "name": "G",
+      "properties": {},
+      "visible": false
+    },
+    {
+      "geomType": 0,
+      "layerId": "OUTPUT_e9989999_a25c_4567_8d5a_95eaaa9d6b22",
+      "name": "R",
+      "properties": {},
+      "visible": false
+    },
+    {
+      "geomType": 0,
+      "layerId": "Termal_27_09_2021_index_thermal_ir_2f45de9c_8902_4323_87b1_e5bdfa52ae1b",
+      "name": "Termal_27_09_2021_index_thermal_ir",
+      "properties": {
+        "checkBox_Clickable": true,
+        "checkBox_Clip": false,
+        "checkBox_Frame": false,
+        "checkBox_Shading": true,
+        "checkBox_Sides": true,
+        "checkBox_Surroundings": false,
+        "checkBox_TransparentBackground": false,
+        "checkBox_Visible": true,
+        "checkBox_Wireframe": false,
+        "colorButton_Color": "0x000000",
+        "comboBox_ClipLayer": "variedades_e0818796_04c4_422a_91a6_b6d1333ab510",
+        "comboBox_TextureSize": 1024,
+        "horizontalSlider_DEMSize": 2,
+        "lineEdit_ImageFile": "",
+        "radioButton_MapCanvas": true,
+        "spinBox_Opacity": 100,
+        "spinBox_Roughening": 1,
+        "spinBox_Size": 3,
+        "toolButton_EdgeColor": "0x000000",
+        "toolButton_SideColor": "0xccbbaa",
+        "toolButton_WireframeColor": "0x000000"
+      },
+      "visible": false
+    },
+    {
+      "geomType": 0,
+      "layerId": "cive_multply_valley_2f9ea455_c1c4_46bb_bded_8e9d84d879ba",
+      "name": "cive_multply_valley",
+      "properties": {},
+      "visible": false
+    },
+    {
+      "geomType": 0,
+      "layerId": "DTM_11ae1792_bca9_408e_a0c0_61234b78f2a3",
+      "name": "DTM",
+      "properties": {},
+      "visible": false
+    },
+    {
+      "geomType": 3,
+      "layerId": "Reprojected_713c63c8_7d93_4348_8ac2_e9ed7c92b378",
+      "name": "Reprojected",
+      "properties": {},
+      "visible": false
+    },
+    {
+      "geomType": 3,
+      "layerId": "Intersection_8143e15f_e1c4_4099_b12e_ee5d04db5f03",
+      "name": "limit_test",
+      "properties": {},
+      "visible": false
+    },
+    {
+      "geomType": 0,
+      "layerId": "DSM_3fba8677_d8a0_471d_82c1_731fcac2200c",
+      "name": "DSM_teste",
+      "properties": {},
+      "visible": false
+    },
+    {
+      "geomType": 0,
+      "layerId": "FLAT",
+      "name": "Flat Plane",
+      "properties": {},
+      "visible": false
+    }
+  ],
+  "SCENE": {
+    "checkBox_FixAspectRatio": true,
+    "checkBox_Outline": false,
+    "checkBox_autoZShift": false,
+    "colorButton_Color": "0x000000",
+    "comboBox_MaterialType": 0,
+    "lineEdit_BaseSize": "10",
+    "lineEdit_CenterX": "294049.70311999996",
+    "lineEdit_CenterY": "7516059.50445",
+    "lineEdit_Height": "28.146776051609777",
+    "lineEdit_Rotation": "0",
+    "lineEdit_Width": "28.146776051609777",
+    "lineEdit_zFactor": "5",
+    "lineEdit_zShift": "0"
+  }
+}

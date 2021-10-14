@@ -92,8 +92,8 @@ class OrangeCanopyConfig(Config):
     TRAIN_ROIS_PER_IMAGE = 100
     RPN_TRAIN_ANCHORS_PER_IMAGE = 100
     #
-    RPN_NMS_THRESHOLD = 0.9
-    MEAN_PIXEL = np.array([105, 236, 189])
+    RPN_NMS_THRESHOLD = 0.7
+    MEAN_PIXEL = np.array([140, 130, 85])
     DETECTION_NMS_THRESHOLD = 0.3
     IMAGE_RESIZE_MODE = "square"
     IMAGE_MIN_DIM = 256
