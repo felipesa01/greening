@@ -457,7 +457,10 @@ class Processing:
             # poly_coord = []
             # for x, y in zip(coord_x, coord_y):
             #     poly_coord.append((x, y))
-            poly_coord.append(poly_coord[0])
+
+            # Por causa do Bug em 15/10
+            if len(poly_coord) < 0:
+                poly_coord.append(poly_coord[0])
 
             # Por causa do bug em 08/09
             if len(poly_coord) >= 3:
@@ -476,7 +479,8 @@ class Processing:
                 result_paths.append(os.path.join(shape_path_aux, filename))
 
         pols = pd.concat([gpd.read_file(i) for i in result_paths], axis=0).reset_index(drop=True)
-        pols['geometry'] = pols.buffer(-0.1).buffer(0.1).simplify(0.03)
+        pols = pols[pols.geometry.is_valid]
+        pols['geometry'] = pols.buffer(0.1).buffer(-0.1).simplify(0.03)
         pols = pols.explode('geometry').reset_index(drop=True)
         pols['centroid'] = pols['geometry'].centroid
         pols.insert(1, column='union', value=0)

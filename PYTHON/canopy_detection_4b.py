@@ -58,7 +58,7 @@ class OrangeCanopyConfig(Config):
     # You can experiment with this number to see if it improves training
     # Antes: 500
     # Valor baseado em gaciaBraga (trees.py): 4171
-    STEPS_PER_EPOCH = 500
+    STEPS_PER_EPOCH = 150
 
     # This is how often validation is run. If you are using too much hard drive space
     # on saved models (in the MODEL_DIR), try making this value larger.
@@ -294,7 +294,7 @@ def prediction(model, dataset, id_list, verbose=0, first=False, join=False):    
         for image in images:
             path = os.path.join(dataset_img_patches, image)
             array, image_tif = hlb_process.readimagetif(path, 'Integer')
-            result = model.detect([array[:, :, 0:3]], verbose=verbose)[0]
+            result = model.detect([array[:, :, 0:4]], verbose=verbose)[0]
             masks = result['masks']
             scores = result['scores']
 
