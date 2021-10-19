@@ -231,8 +231,13 @@ def train(model, config, train_type='heads', dataset=None):
     val_dataset.load_data(dataset, 'val')
     val_dataset.prepare()
 
-    augmentation = iaa.SomeOf((0, 2), [iaa.Fliplr(0.5), iaa.Flipud(0.5), iaa.OneOf(
-        [iaa.Affine(rotate=90), iaa.Affine(rotate=180), iaa.Affine(rotate=270)]), iaa.Multiply((0.5, 1.5))])
+    augmentation = iaa.SomeOf((0, 2),
+                              [iaa.Fliplr(0.5),
+                               iaa.Flipud(0.5),
+                               iaa.OneOf([iaa.Affine(rotate=90),
+                                          iaa.Affine(rotate=180),
+                                          iaa.Affine(rotate=270)]),
+                               iaa.Multiply((0.5, 1.5))])
 
     # You can first train the heads
     print('Training Heads...')

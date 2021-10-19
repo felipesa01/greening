@@ -161,6 +161,7 @@ def buffer_to_rows(buffer, points, pt_inverse=False):
 
     for i in buffer.index:
 
+        # Busca os pontos dentro do polygono buffer
         points_within = points.geometry.within(buffer.loc[i, 'geometry'])
         df_points = points.loc[[points_within[points_within].index][0]]
 

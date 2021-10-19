@@ -11,15 +11,19 @@ import pandas as pd
 from tqdm import tqdm
 from time import sleep
 import json
+
 gdal.UseExceptions()
 
 
 class PreProcessing:
 
-    def __init__(self, ortomosaico_dir, copas_dir=None, proj_name=None):
+    def __init__(self, rgb_dir, dem_dir, canopy_dir=None, proj_name=None):
+
+        self.rgb_dir = rgb_dir
+        self.dem_dir = dem_dir
 
         if proj_name is None:
-            self.proj_name = os.path.splitext(os.path.basename(ortomosaico_dir))[0].lower()
+            self.proj_name = os.path.splitext(os.path.basename(rgb_dir))[0].lower()
         else:
             self.proj_name = proj_name
 
@@ -29,13 +33,52 @@ class PreProcessing:
             os.mkdir(os.path.join(self.proj_dir, 'img_patches'))
             os.mkdir(os.path.join(self.proj_dir, 'annotations'))
 
-        self.orto = gdal.Open(ortomosaico_dir) # Dataset da imagem
-        self.pxsize = round(self.orto.GetGeoTransform()[1], 5)  # Tamanho do pixel (m)
         self.grid = None
-        if copas_dir is None:
+        if canopy_dir is None:
             self.copas = None
         else:
-            self.copas = gpd.read_file(copas_dir).set_index('id').sort_index()
+            self.copas = gpd.read_file(canopy_dir).set_index('id').sort_index()
+
+    def merge_rgb_dem(self):
+        print('Reading source image information')
+        with rasterio.open(self.rgb_dir) as src_rgb:
+            meta_dst = src_rgb.meta
+        meta_dst.update(count=4)
+
+        folder_dir = os.path.dirname(self.rgb_dir)
+        # # Read each layer and write it to stack
+        print('Writing output file')
+        with rasterio.open(os.path.join(folder_dir, 'stack_prev.tif'), 'w',
+                           **meta_dst) as dst:
+            for band in range(1, 4):
+                print('Band {}'.format(band))
+                with rasterio.open(self.rgb_dir) as src_rgb:
+                    dst.write_band(band, src_rgb.read(band))
+
+            with rasterio.open(self.dem_dir) as src_dem:
+                print('Band 4')
+                meta_dem = src_dem.meta
+
+                band_dem = src_dem.read(1)
+                band_dem[band_dem == meta_dem['nodata']] = np.nan
+                min_value, max_value = np.nanmin(band_dem), np.nanmax(band_dem)
+
+                band_dem_rescaled = np.interp(band_dem, (min_value, max_value), (0, 255))
+
+                band_dem_rescaled[band_dem_rescaled == np.nan] = 0
+
+                dst.write_band(4, band_dem_rescaled.astype('uint8'))
+
+        print('Setting options to output file')
+        ds = gdal.Open(os.path.join(folder_dir, 'stack_prev.tif'))
+        gdal.Translate(os.path.join(folder_dir, 'RGB-D_0-255_stack.tif'), ds,
+                       creationOptions=['ALPHA=NO'])
+        os.remove(os.path.join(folder_dir, 'stack_prev.tif'))
+        ds = None
+
+        self.orto = gdal.Open(os.path.join(folder_dir, 'RGB-D_0-255_stack.tif'))  # Dataset da imagem
+        self.pxsize = round(self.orto.GetGeoTransform()[1], 5)  # Tamanho do pixel (m)
+        print('Done!')
 
     def split_img(self, patch_size=256, overlap=0, driver_grid='GeoJSON', save_img=True):
         self.patch_size = patch_size
@@ -204,7 +247,8 @@ class PreProcessing:
             sleep(0.1)
             for i in self.grid.index:
                 # Avaliar situação em que keep_geom (argumento de gpd.clip()) seja True
-                corte = gpd.overlay(self.copas, self.grid.loc[[i]], how='intersection') # gpd.clip(self.copas, self.grid.loc[[i]]).explode().reset_index(drop=True, level=[1]).set_index('id')
+                corte = gpd.overlay(self.copas, self.grid.loc[[i]],
+                                    how='intersection')  # gpd.clip(self.copas, self.grid.loc[[i]]).explode().reset_index(drop=True, level=[1]).set_index('id')
                 corte = corte.loc[corte['geometry'].geom_type == 'Polygon']
                 if not corte.empty:
                     corte = self.coords_to_xy(corte, self.grid.loc[i].name)
@@ -320,7 +364,8 @@ class PreProcessing:
                 # "segment_info": []  # <-- Only in Panoptic annotations
             }
 
-            with open(os.path.join(self.proj_dir, 'annotations', 'coco_annotations_{}.json'.format(split)), 'w') as outfile:
+            with open(os.path.join(self.proj_dir, 'annotations', 'coco_annotations_{}.json'.format(split)),
+                      'w') as outfile:
                 json.dump(annotation, outfile)
 
 
@@ -526,7 +571,8 @@ class Processing:
 
                 # Caso alguma área de intersecao avaliada seja maior que 60% (limiar_overlap) do proprio poligono avaliado
                 # ou se poligono avaliado é 3,5x menor que aquele com o qual existe intersecao, o poligono será excluido
-                if intersec.loc[intersec['geometry'].area >= limiar_ovelap * pols.loc[i, 'geometry'].area].any(axis=None) or \
+                if intersec.loc[intersec['geometry'].area >= limiar_ovelap * pols.loc[i, 'geometry'].area].any(
+                        axis=None) or \
                         (3.5 * pols.loc[i, 'geometry'].area < pols.loc[intersec['id_2'], 'geometry'].area).any():
                     delete_lines.append(i)
 
