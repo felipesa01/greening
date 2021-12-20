@@ -340,7 +340,7 @@ def select_bridge(potential_bridges):
         # Ratio: Razao entre o segundo e o primeiro segmento formador da ponte
         ratio = LineString([i[1], i[2]]).length / LineString([i[0], i[1]]).length
         # Angle: Angulo formado entre os tres pontos formadores da ponte
-        angle = get_angle_vertex(i[0], i[1], i[2])
+        angle = abs(get_angle_vertex(i[0], i[1], i[2]) - 180)
 
         metrics[ids] = {'ratio': ratio, 'angle': angle}
 
@@ -370,13 +370,13 @@ def select_bridge(potential_bridges):
         # Regras de selecao #
         '''O fator prioritário na seleção da ponte é a distância do segundo segmento. Quando mais próximo do primeiro,
         ou quanto menor a fracão, mais adequado. Entretanto, nos casos em que duas pontes apresentem tamanhos do
-        segundo segmento muito proximos (30%), o fator de escolha se torna o angulo formado pela ponte. Aquela de menor
+        segundo segmento muito proximos (50%), o fator de escolha se torna o angulo formado pela ponte. Aquela de menor
         angulaçao entre os seus tres pontos e a escolhida'''
 
         menor_1 = df_select.iloc[0]['ratio']
         menor_2 = df_select.iloc[1]['ratio']
 
-        if (menor_2 / menor_1) <= 1.3:
+        if (menor_2 / menor_1) <= 1.5:
             index = df_select.head(2).sort_values('angle').iloc[[0]].index[0]
         else:
             index = df_select.head(1).index[0]
@@ -567,10 +567,13 @@ def detect_lines_uni(df_points, row_inverse=False, pt_inverse=False):
 
     rows = gpd.GeoDataFrame({'id': ids_rows, 'geometry': geom_rows}, crs=points_new.crs)
 
-
     label_id = ['{row:03}-{pt:04}'.format(row=r, pt=p) for r, p in
                 zip(list(points_new['row']), list(points_new['id_row']))]
     points_new.insert(1, 'label_id', label_id)
+
+    # Apagar pontos "não mapeados" e a linha deles  (recurso apareceu qnd testado o resultado bruto da rcnn)
+    rows = rows.loc[rows['id'] > 0]
+    points_new = points_new.loc[points_new['row'] > 0]
 
     return rows, points_new
 

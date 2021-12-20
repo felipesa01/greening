@@ -58,16 +58,16 @@ class OrangeCanopyConfig(Config):
     # You can experiment with this number to see if it improves training
     # Antes: 500
     # Valor baseado em gaciaBraga (trees.py): 4171
-    STEPS_PER_EPOCH = 150
+    STEPS_PER_EPOCH = 1031
 
     # This is how often validation is run. If you are using too much hard drive space
     # on saved models (in the MODEL_DIR), try making this value larger.
     # Antes: 5
     # Valor baseado em gaciaBraga (trees.py): 1001
-    VALIDATION_STEPS = 100
+    VALIDATION_STEPS = 342
 
     # Matterport originally used resnet101, but I downsized to fit it on my graphics card
-    BACKBONE = 'resnet50'  # garciaBraga (trees.py) tbm usa resnet50
+    BACKBONE = 'resnet101'  # garciaBraga (trees.py) tbm usa resnet50
 
     # To be honest, I haven't taken the time to figure out what these do
     # RPN_ANCHOR_SCALES = (8, 16, 32, 64, 128)      # Configurado abaixo
@@ -81,19 +81,19 @@ class OrangeCanopyConfig(Config):
     DETECTION_MIN_CONFIDENCE = 0.5
     BACKBONE_STRIDES = [4, 8, 16, 32, 64]
     RPN_ANCHOR_SCALES = (4, 8, 16, 32, 64)
-    USE_MINI_MASK = False
+    USE_MINI_MASK = True
     IMAGE_CHANNEL_COUNT = 4
-    LEARNING_RATE = 0.0002
+    LEARNING_RATE = 0.001
     LEARNING_MOMENTUM = 0.9
     # I left this equal to 220, but during the training my images had a maximum of 150 tree crowns (garciaBraga -> trees.py)
     # I left this equal to 100
     MAX_GT_INSTANCES = 100
-    DETECTION_MAX_INSTANCES = 100
-    TRAIN_ROIS_PER_IMAGE = 100
-    RPN_TRAIN_ANCHORS_PER_IMAGE = 100
+    DETECTION_MAX_INSTANCES = 40
+    TRAIN_ROIS_PER_IMAGE = 200
+    RPN_TRAIN_ANCHORS_PER_IMAGE = 256
     #
     RPN_NMS_THRESHOLD = 0.7
-    MEAN_PIXEL = np.array([140, 130, 85, 50])
+    MEAN_PIXEL = np.array([140, 130, 85, 60])
     DETECTION_NMS_THRESHOLD = 0.3
     IMAGE_RESIZE_MODE = "square"
     IMAGE_MIN_DIM = 256
@@ -103,7 +103,7 @@ class OrangeCanopyConfig(Config):
         "rpn_bbox_loss": 1.,
         "mrcnn_class_loss": 1.,
         "mrcnn_bbox_loss": 1.,
-        "mrcnn_mask_loss": 3.
+        "mrcnn_mask_loss": 1.
     }
 # end Class OrangeCanopyConfig
 
@@ -241,30 +241,30 @@ def train(model, config, train_type='heads', dataset=None):
 
     # You can first train the heads
     print('Training Heads...')
-    model.train(train_dataset, val_dataset, learning_rate=config.LEARNING_RATE, epochs=12, augmentation=augmentation, layers='heads')
+    model.train(train_dataset, val_dataset, learning_rate=config.LEARNING_RATE, epochs=3, augmentation=augmentation, layers='heads')
 
     # see parameters.txt to get hints
     if train_type != 'heads':
         print('Training All One..')
-        model.train(train_dataset, val_dataset, learning_rate=config.LEARNING_RATE, epochs=24, augmentation=augmentation, layers='all')
+        model.train(train_dataset, val_dataset, learning_rate=config.LEARNING_RATE, epochs=15, augmentation=augmentation, layers='all')
 
         if train_type == 'all_1':
             return 'Training Finished!'
 
         print('Training All Two...')
-        model.train(train_dataset, val_dataset, learning_rate=config.LEARNING_RATE/10, epochs=36, augmentation=augmentation, layers='all')
+        model.train(train_dataset, val_dataset, learning_rate=config.LEARNING_RATE/10, epochs=27, augmentation=augmentation, layers='all')
 
         if train_type == 'all_2':
             return 'Training Finished!'
 
         print('Training All Tree...')
-        model.train(train_dataset, val_dataset, learning_rate=config.LEARNING_RATE/100, epochs=48, augmentation=augmentation, layers='all')
+        model.train(train_dataset, val_dataset, learning_rate=config.LEARNING_RATE/100, epochs=39, augmentation=augmentation, layers='all')
 
         if train_type == 'all_3':
             return 'Training Finished!'
 
         print('Training All Four...')
-        model.train(train_dataset, val_dataset, learning_rate=config.LEARNING_RATE/1000, epochs=60, augmentation=augmentation, layers='all')
+        model.train(train_dataset, val_dataset, learning_rate=config.LEARNING_RATE/1000, epochs=50, augmentation=augmentation, layers='all')
 
     return 'Training Finished!!!!'
 

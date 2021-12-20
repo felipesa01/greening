@@ -369,6 +369,76 @@ class PreProcessing:
                       'w') as outfile:
                 json.dump(annotation, outfile)
 
+    def make_annotations_joined(self, dict,  info=None, licenses=None, categories=None):
+
+        if info is None:
+            info = {"description": "Felipe Sa 2021 - HLB",
+                    "url": "http://siteaqui.com",
+                    "version": "1.0",
+                    "year": 2021,
+                    "contributor": "Felipe Sa",
+                    "date_created": "2021/01/01"}
+        if licenses is None:
+            licenses = [{"url": "http://creativecommons.org/licenses/by-nc-sa/2.0/",
+                         "id": 1,
+                         "name": "Attribution-NonCommercial-ShareAlike License"},
+                        {"url": "http://creativecommons.org/licenses/by-nc/2.0/",
+                         "id": 2,
+                         "name": "Attribution-NonCommercial License"}]
+        if categories is None:
+            categories = [{"supercategory": "canopy", "id": 1, "name": "hamlin"}]
+
+        for split in ['train', 'val']:
+            ids_img = list(self.grid.loc[self.grid['split_samples'] == split].index)
+            images = []
+            annotations = []
+            for i in ids_img:
+
+                for k, v in dict.items():
+                    if i in k:
+                        self.patch_size = v[0]
+                        self.pxsize = v[1]
+
+                # images
+                images.append({"license": 1,
+                               "file_name": "{:05}.tif".format(i),
+                               "coco_url": "empty",
+                               "height": self.patch_size,
+                               "width": self.patch_size,
+                               "date_captured": "2020-01-01 00:00:00",
+                               "flickr_url": "empty",
+                               "id": i
+                               })
+
+                # Annotations
+                copas = gpd.read_file(os.path.join(self.proj_dir, 'vector_split.gpkg'), layer='{i:05}'.format(i=i))
+
+                for row in copas.index:
+                    geom_px = [float(x) for x in copas.loc[row, 'geometry_image'].split(', ')]
+
+                    annotations.append({"segmentation": [geom_px],
+                                        # [REFATORADO] Atenção aqui!! 0.0025 é para o tamanho do pixel de 5cm (0,05 x 0,05 = 0,0025)
+                                        "area": copas.loc[row, 'geometry'].area / (self.pxsize * self.pxsize),
+                                        "iscrowd": 0,
+                                        "image_id": i,
+                                        "bbox": self.get_bbox(geom_px),
+                                        "category_id": 1,
+                                        "id": int(str(i) + '0' + str(row + 1))  # Não definido ainda
+                                        })
+
+            annotation = {
+                "info": info,
+                "licenses": licenses,
+                "images": images,
+                "categories": categories,
+                "annotations": annotations,  # <-- Not in Captions annotations
+                # "segment_info": []  # <-- Only in Panoptic annotations
+            }
+
+            with open(os.path.join(self.proj_dir, 'annotations', 'coco_annotations_{}.json'.format(split)),
+                      'w') as outfile:
+                json.dump(annotation, outfile)
+
 
 class Processing:
 
@@ -569,6 +639,9 @@ class Processing:
         with tqdm(total=len(over['id_1'])) as pbar:
             pbar.set_description("Simplificando - Micro")
             sleep(0.1)
+
+            over['area'] = over['geometry'].area
+            over = over.sort_values('area')
             # Para cada poligono..
             for i in over['id_1']:
                 # intersecções entre o poligono avaliado e todas as outras feições
@@ -576,10 +649,15 @@ class Processing:
 
                 # Caso alguma área de intersecao avaliada seja maior que 60% (limiar_overlap) do proprio poligono avaliado
                 # ou se poligono avaliado é 3,5x menor que aquele com o qual existe intersecao, o poligono será excluido
-                if intersec.loc[intersec['geometry'].area >= limiar_ovelap * pols.loc[i, 'geometry'].area].any(
-                        axis=None) or \
+                if intersec.loc[intersec['geometry'].area >= limiar_ovelap * pols.loc[i, 'geometry'].area].any(axis=None) | \
+                        (intersec['geometry'].area.sum() > 0.5 * pols.loc[i, 'geometry'].area).any() | \
                         (3.5 * pols.loc[i, 'geometry'].area < pols.loc[intersec['id_2'], 'geometry'].area).any():
-                    delete_lines.append(i)
+
+                    # Inserido em 18/12 para evitar falha de detecção
+                    # Não deletar o maior poligono formador da maior intersecao
+                    maior = intersec.loc[intersec['geometry'].area == max(intersec['geometry'].area), ['id_1', 'id_2']]
+                    if pols.loc[maior['id_1'], 'geometry'].area.values[0] < pols.loc[maior['id_2'], 'geometry'].area.values[0]:
+                        delete_lines.append(i)
 
                 pbar.update(1)
 
@@ -589,6 +667,9 @@ class Processing:
 
         pols.drop(labels=delete_lines, axis=0, inplace=True)
         pols = pols.explode().reset_index(drop=True)
+
+        # pols = pols.loc[(pols['geometry'].area > 0.2) & (pols['geometry'].length / pols['geometry'].area / np.sqrt(pols['geometry'].area) < 20)]
+
         pols.set_index(keys=pd.Index(range(1, pols.shape[0] + 1)), inplace=True)
         pols['id'] = pols.index
         return pols
