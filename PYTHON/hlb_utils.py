@@ -580,9 +580,11 @@ class Processing:
 
             # Por causa do bug em 08/09
             if len(poly_coord) >= 3:
-                poly = geometry.Polygon(poly_coord).buffer(0.15, join_style=3).buffer(-0.15, join_style=3)
+                #poly = geometry.Polygon(poly_coord).buffer(0.15, join_style=3).buffer(-0.15, join_style=3)
 
+                poly = geometry.MultiPoint(poly_coord).convex_hull
                 gdf_final = gdf_final.append({'geometry': poly, 'detection_score': score}, ignore_index=True)
+
 
         gdf_final = gdf_final.explode().reset_index(drop=True)
         return gdf_final
@@ -598,6 +600,8 @@ class Processing:
         pols = pols[pols.geometry.is_valid]
         pols['geometry'] = pols.buffer(0.1).buffer(-0.1).simplify(0.03)
         pols = pols.explode('geometry').reset_index(drop=True)
+
+        '''
         pols['centroid'] = pols['geometry'].centroid
         pols.insert(1, column='union', value=0)
         pols.set_index(keys=pd.Index(range(1, pols.shape[0] + 1)), inplace=True)
@@ -622,57 +626,66 @@ class Processing:
         pols = pols.dissolve(by='union', as_index=False)
         pols.drop(['union', 'centroid'], axis=1, inplace=True)
         pols.drop(pols.loc[pols['geometry'].is_empty].index, axis=0, inplace=True)
+        '''
         pols.set_index(keys=pd.Index(range(1, pols.shape[0] + 1)), inplace=True)
         pols['id'] = pols.index
         # pols['centroid'] = pols['geometry'].centroid
 
-        # Gerar intersecoes entre os poligonos encontrados
-        # Uso de busca indexada (R-tree) com a função gpd.overlay()
-        over = gpd.overlay(pols, pols, how='intersection')
-        # Remover poligonos vazios (talvez possa ser dispensado a partir de agora)
-        over = over.loc[-over['geometry'].is_empty]
-        # Remover intersecoes originadas pela sobreposição da feição com ela mesma
-        over = over.loc[over['id_1'] != over['id_2']].explode().reset_index(drop=True)
+        for _ in range(2):
+            # Gerar intersecoes entre os poligonos encontrados
+            # Uso de busca indexada (R-tree) com a função gpd.overlay()
+            over = gpd.overlay(pols, pols, how='intersection')
+            # Remover poligonos vazios (talvez possa ser dispensado a partir de agora)
+            over = over.loc[-over['geometry'].is_empty]
+            # Remover intersecoes originadas pela sobreposição da feição com ela mesma
+            over = over.loc[over['id_1'] != over['id_2']]
+            # .explode().reset_index(drop=True)
 
-        delete_lines = []
-        # Barra de progresso #
-        with tqdm(total=len(over['id_1'])) as pbar:
-            pbar.set_description("Simplificando - Micro")
-            sleep(0.1)
+            delete_lines = []
+            # Barra de progresso #
+            with tqdm(total=len(over['id_1'])) as pbar:
+                pbar.set_description("Simplificando - Micro")
+                sleep(0.1)
 
-            over['area'] = over['geometry'].area
-            over = over.sort_values('area')
-            # Para cada poligono..
-            for i in over['id_1']:
-                # intersecções entre o poligono avaliado e todas as outras feições
-                intersec = over[over['id_1'] == i]
+                over['area'] = over['geometry'].area
+                over = over.sort_values('area')
 
-                # Caso alguma área de intersecao avaliada seja maior que 60% (limiar_overlap) do proprio poligono avaliado
-                # ou se poligono avaliado é 3,5x menor que aquele com o qual existe intersecao, o poligono será excluido
-                if intersec.loc[intersec['geometry'].area >= limiar_ovelap * pols.loc[i, 'geometry'].area].any(axis=None) | \
-                        (intersec['geometry'].area.sum() > 0.5 * pols.loc[i, 'geometry'].area).any() | \
-                        (3.5 * pols.loc[i, 'geometry'].area < pols.loc[intersec['id_2'], 'geometry'].area).any():
+                # Para cada poligono..
+                for i in over['id_1']:
+                    # intersecções entre o poligono avaliado e todas as outras feições
+                    intersec = over[over['id_1'] == i]
 
-                    # Inserido em 18/12 para evitar falha de detecção
-                    # Não deletar o maior poligono formador da maior intersecao
-                    maior = intersec.loc[intersec['geometry'].area == max(intersec['geometry'].area), ['id_1', 'id_2']]
-                    if pols.loc[maior['id_1'], 'geometry'].area.values[0] < pols.loc[maior['id_2'], 'geometry'].area.values[0]:
-                        delete_lines.append(i)
+                    # Caso alguma área de intersecao avaliada seja maior que 60% (limiar_overlap) do proprio poligono avaliado
+                    # ou se poligono avaliado é 3x menor que aquele com o qual existe intersecao, o poligono será excluido]
+                    if intersec.loc[intersec['geometry'].area >= limiar_ovelap * pols.loc[i, 'geometry'].area].any(
+                            axis=None) | \
+                            (intersec['geometry'].area.sum() >= limiar_ovelap * pols.loc[i, 'geometry'].area) | \
+                            (3 * pols.loc[i, 'geometry'].area < pols.loc[intersec['id_2'], 'geometry'].area).any():
 
-                pbar.update(1)
+                        # Inserido em 18/12 para evitar falha de detecção
+                        # Não deletar o maior poligono formador da maior intersecao
+                        maior = intersec.loc[
+                            intersec['geometry'].area == max(intersec['geometry'].area), ['id_1', 'id_2']]
+                        if pols.loc[maior['id_1'], 'geometry'].area.values[0] < \
+                                pols.loc[maior['id_2'], 'geometry'].area.values[0]:
+                            delete_lines.append(i)
 
-            # Identificar poligonos a serem apagados
-            delete_lines = (list(set(delete_lines)))
-        # Fim da barra de progresso #
+                    pbar.update(1)
 
-        pols.drop(labels=delete_lines, axis=0, inplace=True)
+                # Identificar poligonos a serem apagados
+                delete_lines = (list(set(delete_lines)))
+            # Fim da barra de progresso #
+
+            pols.drop(labels=delete_lines, axis=0, inplace=True)
+
         pols = pols.explode().reset_index(drop=True)
-
-        # pols = pols.loc[(pols['geometry'].area > 0.2) & (pols['geometry'].length / pols['geometry'].area / np.sqrt(pols['geometry'].area) < 20)]
 
         pols.set_index(keys=pd.Index(range(1, pols.shape[0] + 1)), inplace=True)
         pols['id'] = pols.index
-        return pols
+
+        pols_filtred = pols.loc[pols['detection_score'] >= 0.99]
+
+        return pols, pols_filtred
 
 
 if __name__ == '__main__':

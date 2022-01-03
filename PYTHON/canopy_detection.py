@@ -317,8 +317,10 @@ def prediction(model, dataset, id_list, verbose=0, first=False, join=False):    
 
     if join:
         print('Gerando arquivo de saida')
-        pols = hlb_process.join_vectors(shape_path_aux)
-        pols.to_file(os.path.join(os.path.dirname(shape_path_aux), 'canopy_detection_result.geojson'), driver='GeoJSON')
+        pols, pols_filtered = hlb_process.join_vectors(shape_path_aux)
+        pols.to_file(os.path.join(os.path.dirname(shape_path_aux), 'canopies_raw.geojson'), driver='GeoJSON')
+        pols_filtered.to_file(os.path.join(os.path.dirname(shape_path_aux), 'canopies_filtered.geojson'), driver='GeoJSON')
+
         print('Concluído!')
 
     return dict_result
